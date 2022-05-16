@@ -7,13 +7,13 @@ A minimal simulator framework built on top of PyGame.
 Installation is temporarily handled through git instead of PyPi:
 
 ```bash
-pip install -U git+ssh://git@github.com:m-rots/violet.git
+pip install -U "git+ssh://git@github.com:m-rots/violet.git@main"
 ```
 
 Or with Poetry:
 
-```
-poetry add git+ssh://git@github.com:m-rots/violet.git
+```bash
+poetry add "git+ssh://git@github.com:m-rots/violet.git#main"
 ```
 
 ## A Simple Example
