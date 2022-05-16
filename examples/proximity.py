@@ -3,21 +3,19 @@ from math import floor
 import pygame as pg
 from pygame.gfxdraw import circle, rectangle
 
-from vi import Agent, Simulation
-
-DISTANCE = 50
+from vi import Agent, BaseConfig, Simulation
 
 
 class Player(Agent):
     def update_position(self):
         keys = pg.key.get_pressed()
-        if keys[pg.K_DOWN]:
+        if keys[pg.K_DOWN] or keys[pg.K_s]:
             self.pos.y += 2
-        if keys[pg.K_UP]:
+        if keys[pg.K_UP] or keys[pg.K_w]:
             self.pos.y -= 2
-        if keys[pg.K_LEFT]:
+        if keys[pg.K_LEFT] or keys[pg.K_a]:
             self.pos.x -= 2
-        if keys[pg.K_RIGHT]:
+        if keys[pg.K_RIGHT] or keys[pg.K_d]:
             self.pos.x += 2
 
     def update(self):
@@ -32,13 +30,24 @@ class Player(Agent):
         rectangle(screen, rect, (255, 255, 255))
 
         # Visualise radius
-        circle(screen, round(self.pos.x), round(self.pos.y), DISTANCE, (255, 255, 255))
+        circle(
+            screen,
+            round(self.pos.x),
+            round(self.pos.y),
+            self.config.chunk_size,
+            (255, 255, 255),
+        )
 
 
 class Proxyman(Agent):
     def update(self):
         if next(
-            (agent for agent in self.within_distance(DISTANCE) if agent.id == -1), False
+            (
+                agent
+                for agent in self.within_distance(self.config.chunk_size)
+                if agent.id == -1
+            ),
+            False,
         ):
             self.image = self.images[1]
         else:
@@ -46,7 +55,7 @@ class Proxyman(Agent):
 
 
 (
-    Simulation()
+    Simulation(BaseConfig(visualise_chunks=True))
     .batch_spawn_agents(
         Proxyman,
         image_paths=[

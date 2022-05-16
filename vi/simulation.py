@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Type, TypeVar
+from typing import TYPE_CHECKING, Optional, Type, TypeVar
 
 import pygame as pg
 from pygame.gfxdraw import hline, vline
 from pygame.math import Vector2
 
+from .config import BaseConfig
 from .obstacle import Obstacle
 from .proximity import ProximityEngine
 from .util import load_image, load_images, round_pos
@@ -14,13 +15,6 @@ if TYPE_CHECKING:
     from .agent import Agent
 
     AgentClass = TypeVar("AgentClass", bound=Agent)
-
-
-AGENT_COUNT = 1000
-CHUNK_SIZE = 50
-
-WIDTH = 500
-HEIGHT = 500
 
 
 class Simulation:
@@ -36,11 +30,16 @@ class Simulation:
     agents: pg.sprite.Group
     obstacles: pg.sprite.Group
 
-    def __init__(self):
+    # Config that's passed on to agents as well
+    config: BaseConfig
+
+    def __init__(self, config: Optional[BaseConfig] = None):
         pg.init()
 
+        self.config = config if config else BaseConfig()
+
         # Create a 400x400 pixel screen
-        self.screen = pg.display.set_mode((WIDTH, HEIGHT))
+        self.screen = pg.display.set_mode((self.config.width, self.config.height))
 
         pg.display.set_caption("Violet")
 
@@ -61,12 +60,12 @@ class Simulation:
         self.obstacles = pg.sprite.Group()
 
         # Proximity!
-        self.proximity = ProximityEngine(self.agents, CHUNK_SIZE)
+        self.proximity = ProximityEngine(self.agents, self.config.chunk_size)
 
     def batch_spawn_agents(
         self, agent_class: Type[AgentClass], image_paths: list[str]
     ) -> Simulation:
-        for i in range(AGENT_COUNT):
+        for i in range(self.config.agent_count):
             agent_class(
                 id=i,
                 containers=[self.all, self.agents],
@@ -75,6 +74,7 @@ class Simulation:
                 area=self.screen.get_rect(),
                 obstacles=self.obstacles,
                 proximity=self.proximity,
+                config=self.config,
             )
 
         return self
@@ -90,6 +90,7 @@ class Simulation:
             area=self.screen.get_rect(),
             obstacles=self.obstacles,
             proximity=self.proximity,
+            config=self.config,
         )
 
         return self
@@ -123,9 +124,9 @@ class Simulation:
                 self.running = False
             elif event.type == pg.KEYDOWN:
                 if event.key == pg.K_HOME:
-                    self.proximity.chunk_size += 10
+                    self.config.chunk_size += 5
                 elif event.key == pg.K_END:
-                    self.proximity.chunk_size -= 10
+                    self.config.chunk_size -= 5
                 else:
                     # If a different key was pressed, then we want to re-emit the vent
                     # so other code can handle it.
@@ -145,6 +146,10 @@ class Simulation:
         # Update the position of all agents
         self.update_positions()
 
+        # If the chunk-size was changed by an event,
+        # also update the chunk-size in the proximity engine
+        self.proximity.chunk_size = self.config.chunk_size
+
         # Calculate proximity chunks
         self.proximity.update()
 
@@ -154,7 +159,8 @@ class Simulation:
         # Draw everything to the screen
         self.all.draw(self.screen)
 
-        self.__visualise_chunks()
+        if self.config.visualise_chunks:
+            self.__visualise_chunks()
 
         pg.display.flip()
 
@@ -177,8 +183,10 @@ class Simulation:
         colour = pg.Color(255, 255, 255, 122)
         chunk_size = self.proximity.chunk_size
 
-        for x in range(chunk_size, WIDTH, chunk_size):
-            vline(self.screen, x, 0, HEIGHT, colour)
+        width, height = self.config.width, self.config.height
 
-        for y in range(chunk_size, HEIGHT, chunk_size):
-            hline(self.screen, 0, WIDTH, y, colour)
+        for x in range(chunk_size, width, chunk_size):
+            vline(self.screen, x, 0, height, colour)
+
+        for y in range(chunk_size, height, chunk_size):
+            hline(self.screen, 0, width, y, colour)

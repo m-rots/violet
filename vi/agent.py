@@ -10,6 +10,7 @@ from pygame.rect import Rect
 from pygame.sprite import Group, Sprite
 from pygame.surface import Surface
 
+from .config import BaseConfig
 from .util import random_angle, random_pos, round_pos
 
 if TYPE_CHECKING:
@@ -38,6 +39,9 @@ class Agent(Sprite):
     # Proximity
     proximity: ProximityEngine
 
+    # Config (shared with other agents too)
+    config: BaseConfig
+
     def __init__(
         self,
         id: int,  # unique identifier used in e.g. proximity calculation and stats engine
@@ -46,10 +50,12 @@ class Agent(Sprite):
         area: Rect,
         obstacles: Group,
         proximity: ProximityEngine,
+        config: BaseConfig,
     ):
         Sprite.__init__(self, *containers)
 
         self.id = id
+        self.config = config
 
         self.proximity = proximity
 
