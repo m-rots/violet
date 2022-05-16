@@ -83,15 +83,7 @@ class Agent(Sprite):
     def on_spawn(self):
         pass
 
-    def update_position(self):
-        """Update the position of the agent.
-
-        The agent's new position is calculated as follows:
-        1. The agent checks whether it's outside of the visible screen area.
-        If this is the case, then the agent will be teleported to the other edge of the screen.
-        2. If the agent collides with any obstacles, then the agent will turn around 180 degrees.
-        3. If the agent has not collided with any obstacles, it will have the opportunity to slightly change its angle.
-        """
+    def there_is_no_escape(self) -> bool:
         changed = False
 
         if self.pos.x < self.area.left:
@@ -109,6 +101,19 @@ class Agent(Sprite):
         if self.pos.y > self.area.bottom:
             changed = True
             self.pos.y = self.area.top
+
+        return changed
+
+    def update_position(self):
+        """Update the position of the agent.
+
+        The agent's new position is calculated as follows:
+        1. The agent checks whether it's outside of the visible screen area.
+        If this is the case, then the agent will be teleported to the other edge of the screen.
+        2. If the agent collides with any obstacles, then the agent will turn around 180 degrees.
+        3. If the agent has not collided with any obstacles, it will have the opportunity to slightly change its angle.
+        """
+        changed = self.there_is_no_escape()
 
         # Always calculate the random angle so a seed could be used.
         deg = random.uniform(-30, 30)
