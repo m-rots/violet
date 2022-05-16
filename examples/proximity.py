@@ -55,7 +55,9 @@ class Proxyman(Agent):
 
 
 (
-    Simulation(BaseConfig(visualise_chunks=True))
+    Simulation(
+        BaseConfig(agent_count=1000, height=500, width=500, visualise_chunks=True)
+    )
     .batch_spawn_agents(
         Proxyman,
         image_paths=[
@@ -63,11 +65,6 @@ class Proxyman(Agent):
             "examples/images/green.png",
         ],
     )
-    .spawn_agent(
-        Player,
-        image_paths=[
-            "examples/images/red.png",
-        ],
-    )
+    .spawn_agent(Player, image_paths=["examples/images/red.png"])
     .run()
 )
