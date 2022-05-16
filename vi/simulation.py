@@ -111,18 +111,33 @@ class Simulation:
 
         pg.quit()
 
+    def before_render(self):
+        pass
+
     def tick(self):
         self.counter += 1
 
-        for event in pg.event.get():
+        rebound = []
+        for event in pg.event.get(eventtype=[pg.QUIT, pg.KEYDOWN]):
             if event.type == pg.QUIT:
                 self.running = False
-            if event.type == pg.KEYDOWN:
-                if event.key == pg.K_w:
-                    print("hi")
+            elif event.type == pg.KEYDOWN:
+                if event.key == pg.K_HOME:
                     self.proximity.chunk_size += 10
-                if event.key == pg.K_s:
+                elif event.key == pg.K_END:
                     self.proximity.chunk_size -= 10
+                else:
+                    # If a different key was pressed, then we want to re-emit the vent
+                    # so other code can handle it.
+                    rebound.append(event)
+
+        for event in rebound:
+            pg.event.post(event)
+
+        self.before_render()
+
+        # Drop all other messages in the event queue
+        pg.event.clear()
 
         self.all.clear(self.screen, self.background)
         self.screen.blit(self.background, (0, 0))
