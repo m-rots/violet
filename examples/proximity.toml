@@ -1,0 +1,4 @@
+agent_count = 1000
+height = 500
+width = 500
+visualise_chunks = true

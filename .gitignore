@@ -3,5 +3,6 @@
 __pycache__
 
 # Temporarily ignore sensitive examples
+examples/aggregation.py
 examples/covid.py
-examples/flocking.py
+examples/covid.toml
