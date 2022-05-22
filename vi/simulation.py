@@ -171,9 +171,9 @@ class Simulation:
     def run(self):
         """Run the simulation until it's ended by closing the window."""
 
-        self.running = True
+        self._running = True
 
-        while self.running:
+        while self._running:
             self.tick()
 
         pg.quit()
