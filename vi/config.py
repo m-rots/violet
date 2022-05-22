@@ -8,17 +8,28 @@ from serde.toml import from_toml
 @dataclass
 class BaseConfig:
     agent_count: int = 100
+    """The number of agents that are spawned when calling `batch_spawn_agents`."""
+
     movement_speed: float = 0.5
+    """The per-frame movement speed of the agents."""
 
     # Proximity chunks
     chunk_size: int = 50
+    """The size of the proximity chunks in pixels."""
+
     visualise_chunks: bool = False
+    """Draw the borders of the proximity-chunks on screen."""
 
     # Screen
     width: int = 750
+    """The width of the simulation window in pixels."""
+
     height: int = 750
+    """The height of the simulation window in pixels."""
 
     @classmethod
     def from_file(cls, file_name: str):
+        """Load the config from a TOML file. The config doesn't have to include all attributes, only those which you want to override."""
+
         with open(file_name, "r") as f:
             return from_toml(cls, f.read())

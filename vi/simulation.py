@@ -18,20 +18,49 @@ if TYPE_CHECKING:
 
 
 class Simulation:
-    counter: int = 0
-    running: bool = False
+    """The simulation class provides a snapshot of the current tick of the simulation.
 
-    background: pg.surface.Surface
-    clock: pg.time.Clock
-    screen: pg.surface.Surface
+    This snapshot includes the state of all agents, obstacles and sites.
+
+    However, you don't really have to care about the internal details of the Simulation.
+    Instead, you usually only want to use this class to:
+
+    1. Create (and optionally configure) the simulation.
+    2. Spawn the agents, obstacles and sites with their respective `batch_spawn_agents`, `spawn_obstacle` and `spawn_site` functions.
+    3. Run the simulation!
+
+    If a custom config isn't provided when creating the simulation, the default values of `BaseConfig` will be used instead.
+    """
+
+    counter: int = 0
+    """A counter that increases each tick of the simulation."""
+
+    _running: bool = False
+    """The simulation keeps running as long as running is True."""
+
+    _background: pg.surface.Surface
+    _clock: pg.time.Clock
+    _screen: pg.surface.Surface
 
     # Sprite Groups
-    all: pg.sprite.Group
-    agents: pg.sprite.Group
-    obstacles: pg.sprite.Group
+    _all: pg.sprite.Group
+    _agents: pg.sprite.Group
+    _obstacles: pg.sprite.Group
+    _sites: pg.sprite.Group
+
+    # Proximity
+    _proximity: ProximityEngine
 
     # Config that's passed on to agents as well
     config: BaseConfig
+    """The config of the simulation that's shared with all agents.
+    
+    The config can be overriden when inheriting the Simulation class.
+    However, the config must always:
+
+    1. Inherit `BaseConfig`
+    2. Be decorated by `@serde`
+    """
 
     def __init__(self, config: Optional[BaseConfig] = None):
         pg.init()
@@ -39,44 +68,52 @@ class Simulation:
         self.config = config if config else BaseConfig()
 
         # Create a 400x400 pixel screen
-        self.screen = pg.display.set_mode((self.config.width, self.config.height))
+        self._screen = pg.display.set_mode((self.config.width, self.config.height))
 
         pg.display.set_caption("Violet")
 
         # Initialise background
-        self.background = pg.surface.Surface(self.screen.get_size()).convert()
-        self.background.fill((0, 0, 0))
+        self._background = pg.surface.Surface(self._screen.get_size()).convert()
+        self._background.fill((0, 0, 0))
 
         # Show background immediately (before spawning agents)
-        self.screen.blit(self.background, (0, 0))
+        self._screen.blit(self._background, (0, 0))
         pg.display.flip()
 
         # Initialise the clock. Used to cap FPS.
-        self.clock = pg.time.Clock()
+        self._clock = pg.time.Clock()
 
         # Create sprite groups
-        self.all = pg.sprite.Group()
-        self.agents = pg.sprite.Group()
-        self.obstacles = pg.sprite.Group()
-        self.sites = pg.sprite.Group()
+        self._all = pg.sprite.Group()
+        self._agents = pg.sprite.Group()
+        self._obstacles = pg.sprite.Group()
+        self._sites = pg.sprite.Group()
 
         # Proximity!
-        self.proximity = ProximityEngine(self.agents, self.config.chunk_size)
+        self._proximity = ProximityEngine(self._agents, self.config.chunk_size)
 
     def batch_spawn_agents(
         self, agent_class: Type[AgentClass], image_paths: list[str]
     ) -> Simulation:
+        """Spawn multiple agents into the simulation.
+
+        The number of agents that are spawned can be adjusted by modifying the `agent_count` option in the config.
+        """
+
+        # Load images once so the files don't have to be read multiple times.
+        images = load_images(image_paths)
+
         for i in range(self.config.agent_count):
             agent_class(
                 id=i,
-                containers=[self.all, self.agents],
+                containers=[self._all, self._agents],
                 movement_speed=self.config.movement_speed,
                 # Load each of the image paths into a blit-optimised Surface
-                images=load_images(image_paths),
-                area=self.screen.get_rect(),
-                obstacles=self.obstacles,
-                sites=self.sites,
-                proximity=self.proximity,
+                images=images,
+                area=self._screen.get_rect(),
+                obstacles=self._obstacles,
+                sites=self._sites,
+                proximity=self._proximity,
                 config=self.config,
             )
 
@@ -85,24 +122,35 @@ class Simulation:
     def spawn_agent(
         self, agent_class: Type[AgentClass], image_paths: list[str]
     ) -> Simulation:
+        """Spawn one agent into the simulation.
+
+        You almost always want to call `batch_spawn_agents` instead.
+        This method should only be used to create a human-controllable player.
+        """
+
         agent_class(
             id=-1,
-            containers=[self.all, self.agents],
+            containers=[self._all, self._agents],
             movement_speed=self.config.movement_speed,
             # Load each of the image paths into a blit-optimised Surface
             images=load_images(image_paths),
-            area=self.screen.get_rect(),
-            obstacles=self.obstacles,
-            sites=self.sites,
-            proximity=self.proximity,
+            area=self._screen.get_rect(),
+            obstacles=self._obstacles,
+            sites=self._sites,
+            proximity=self._proximity,
             config=self.config,
         )
 
         return self
 
     def spawn_obstacle(self, image_path: str, x: int, y: int) -> Simulation:
+        """Spawn one obstacle into the simulation. The given coordinates will be the centre of the obstacle.
+
+        When agents collide with an obstacle, they will make a 180 degree turn.
+        """
+
         Obstacle(
-            containers=[self.all, self.obstacles],
+            containers=[self._all, self._obstacles],
             image=load_image(image_path),
             pos=Vector2((x, y)),
         )
@@ -110,8 +158,10 @@ class Simulation:
         return self
 
     def spawn_site(self, image_path: str, x: int, y: int) -> Simulation:
+        """Spawn one site into the simulation. The given coordinates will be the centre of the site."""
+
         Obstacle(
-            containers=[self.all, self.sites],
+            containers=[self._all, self._sites],
             image=load_image(image_path),
             pos=Vector2((x, y)),
         )
@@ -119,6 +169,8 @@ class Simulation:
         return self
 
     def run(self):
+        """Run the simulation until it's ended by closing the window."""
+
         self.running = True
 
         while self.running:
@@ -126,16 +178,26 @@ class Simulation:
 
         pg.quit()
 
-    def before_render(self):
+    def before_update(self):
+        """Run any code before the agents are updated in every tick.
+
+        You should override this method when inheriting Simulation to add your own logic.
+
+        Some examples include:
+        - Processing events from PyGame's event queue.
+        """
+
         pass
 
     def tick(self):
+        """Advance the simulation with one tick."""
+
         self.counter += 1
 
         rebound = []
         for event in pg.event.get(eventtype=[pg.QUIT, pg.KEYDOWN]):
             if event.type == pg.QUIT:
-                self.running = False
+                self.stop()
             elif event.type == pg.KEYDOWN:
                 if event.key == pg.K_HOME:
                     self.config.chunk_size += 5
@@ -149,58 +211,69 @@ class Simulation:
         for event in rebound:
             pg.event.post(event)
 
-        self.before_render()
+        self.before_update()
 
         # Drop all other messages in the event queue
         pg.event.clear()
 
-        self.all.clear(self.screen, self.background)
-        self.screen.blit(self.background, (0, 0))
+        self._all.clear(self._screen, self._background)
+        self._screen.blit(self._background, (0, 0))
 
         # Update the position of all agents
-        self.update_positions()
+        self.__update_positions()
 
         # If the chunk-size was changed by an event,
         # also update the chunk-size in the proximity engine
-        self.proximity.chunk_size = self.config.chunk_size
+        self._proximity.chunk_size = self.config.chunk_size
 
         # Calculate proximity chunks
-        self.proximity.update()
+        self._proximity.update()
 
         # Update all agents
-        self.all.update()
+        self._all.update()
 
         # Draw everything to the screen
-        self.all.draw(self.screen)
+        self._all.draw(self._screen)
 
         if self.config.visualise_chunks:
             self.__visualise_chunks()
 
         pg.display.flip()
 
-        self.clock.tick(60)
+        self._clock.tick(60)
 
-        current_fps = self.clock.get_fps()
+        current_fps = self._clock.get_fps()
         if current_fps > 0:
             print(f"FPS: {current_fps:.1f}")
 
-    def update_positions(self):
+    def stop(self):
+        """Stop the simulation.
+
+        The simulation isn't stopped directly.
+        Instead, the current tick is completed, after which the simulation will end.
+        """
+
+        self._running = False
+
+    def __update_positions(self):
         """Update the position of all agents."""
 
-        for sprite in self.agents.sprites():
+        for sprite in self._agents.sprites():
             agent: Agent = sprite  # type: ignore
             agent.update_position()
 
             agent.rect.center = round_pos(agent.pos)
 
     def __visualise_chunks(self):
+        """Visualise the proximity chunks by drawing their borders."""
+
         colour = pg.Color(255, 255, 255, 122)
-        chunk_size = self.proximity.chunk_size
+        chunk_size = self._proximity.chunk_size
 
         width, height = self.config.width, self.config.height
 
         for x in range(chunk_size, width, chunk_size):
-            vline(self.screen, x, 0, height, colour)
+            vline(self._screen, x, 0, height, colour)
 
         for y in range(chunk_size, height, chunk_size):
-            hline(self.screen, 0, width, y, colour)
+            hline(self._screen, 0, width, y, colour)

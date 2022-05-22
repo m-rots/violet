@@ -22,31 +22,57 @@ T = TypeVar("T", bound="Agent")
 
 class Agent(Sprite):
     id: int
+    """The unique identifier of the agent."""
 
     images: list[Surface]
+    """A list of images which you can use to change the current image of the agent."""
+
     image: Surface
-    rect: Rect  # used for collisions and drawing
+    """The current image of the agent."""
 
-    # Position updating & making sure agent does not go out of playable area.
+    rect: Rect
+    """The bounding-box which is used for PyGame's rendering."""
+
     area: Rect
+    """The area in which the agent is free to move."""
+
     move: Vector2
+    """The current angle and speed used for the agent's movement."""
+
     pos: Vector2
+    """The current (centre) position of the agent."""
 
-    # Keep track of our previous-move vector (for freeze functionality)
     __previous_move: Optional[Vector2] = None
+    """The value of the `move` vector before the agent was frozen."""
 
-    # Obstacle Avoidance
     obstacles: Group
+    """The group of obstacles the agent can collide with."""
+
     mask: Mask
+    """Bit-mask of the image used for collision detection with obstacles and sites."""
 
     # Sites
     sites: Group
+    """The group of sites on which the agent can appear."""
 
     # Proximity
-    proximity: ProximityEngine
+    __proximity: ProximityEngine
+    """The Proximity Engine used for all proximity-related methods.
+    
+    The proximity engine is private (double underscore prefix) as one could retrieve all agents with it.
+    Therefore, the Agent class provides the (public) `in_proximity`, `in_close_proximity` and `in_radius` wrapper methods instead.
+    """
 
     # Config (shared with other agents too)
     config: BaseConfig
+    """The config of the simulation that's shared with all agents.
+    
+    The config can be overriden when inheriting the Agent class.
+    However, the config must always:
+
+    1. Inherit `BaseConfig`
+    2. Be decorated by `@serde`
+    """
 
     def __init__(
         self,
@@ -65,7 +91,7 @@ class Agent(Sprite):
         self.id = id
         self.config = config
 
-        self.proximity = proximity
+        self.__proximity = proximity
 
         # Default to first image in case no image is given
         self.image = images[0]
@@ -74,17 +100,15 @@ class Agent(Sprite):
         self.obstacles = obstacles
         self.sites = sites
 
+        self.area = area
+        self.move = random_angle(movement_speed)
+
         # On spawn acts like the __init__ for non-pygame facing state.
         # It could be used to override the initial image if necessary.
         self.on_spawn()
 
-        # Only set the rectangle when it's "final"
+        # Only calculate the rectangle and bitmask when the image is "final"
         self.rect = self.image.get_rect()
-
-        self.area = area
-        self.move = random_angle(movement_speed)
-
-        # Obstacle Avoidance
         self.mask = pg.mask.from_surface(self.image)
 
         # Keep changing the position until the position no longer collides with any obstacle.
@@ -97,9 +121,22 @@ class Agent(Sprite):
                 break
 
     def on_spawn(self):
+        """Run any code when the agent is spawned into the simulation.
+
+        This method is a replacement for `__init__`, which you should not overwrite directly.
+        Instead, you can make alterations to your Agent within this function instead.
+
+        You should override this method when inheriting Agent to add your own logic.
+
+        Some examples include:
+        - Changing the image or state of your Agent depending on its assigned identifier.
+        """
+
         pass
 
     def there_is_no_escape(self) -> bool:
+        """Pac-Man-style teleport the agent to the other side of the screen when it is outside of the playable area."""
+
         changed = False
 
         if self.pos.x < self.area.left:
@@ -160,30 +197,84 @@ class Agent(Sprite):
         # Actually update the position at last.
         self.pos += self.move
 
+    # TODO: rename method to better convey that only agents in the same chunk are returned.
     def in_proximity(self: T) -> set[T]:
-        return self.proximity.in_chunk(self)
+        """Retrieve other agents that are in the same chunk as the current agent.
+
+        Tweaking the effective proximity radius can be done by modifying the `chunk-size` option in the config.
+
+        This proximity method is quite inaccurate and should not be used.
+        Instead, the use of `in_close_proximity` is strongly preferred as it has the same performance characteristics,
+        but significantly improves the accuracy.
+
+        `in_proximity` is one of three methods to retrieve neighbouring agents:
+
+        1. `in_proximity`: agents in the same chunk are returned.
+        2. `in_close_proximity`: agents in the same chunk, as well as neighbouring chunks, are returned.
+        3. `in_radius`: agents within a radius are returned (most accurate but also very slow).
+        """
+        return self.__proximity.in_same_chunk(self)
 
     def in_close_proximity(self: T) -> set[T]:
-        return self.proximity.in_surrounding_chunks(self)
+        """Retrieve other agents that are in proximity of the current agent.
 
-    def within_distance(self: T, radius: float) -> set[T]:
+        Agent proximity is determined by retrieving the chunk the agent is currently in,
+        as well as 8 neighbouring chunks, to retrieve a total of 9 chunks.
+        All agents, other than the current agent, that appear in these chunks are considered to be in proximity.
+
+        This proximity method is strongly preferred over `in_proximity` as it better accounts for cases where two agents
+        are perhaps one pixel apart, but both are in a different chunk.
+        By also retrieving the neighbouring pixels, the accuracy is improved considerably.
+
+        Tweaking the effective proximity radius can be done by modifying the `chunk-size` option in the config.
+        Note that this proximity method retrieves 3x the chunk-size, so adjust the chunk size accordingly.
+
+        `in_close_proximity` is one of three methods to retrieve neighbouring agents:
+
+        1. `in_proximity`: agents in the same chunk are returned.
+        2. `in_close_proximity`: agents in the same chunk, as well as neighbouring chunks, are returned.
+        3. `in_radius`: agents within a radius are returned (most accurate but also very slow).
+        """
+        return self.__proximity.in_surrounding_chunks(self)
+
+    def in_radius(self: T) -> set[T]:
+        """Retrieve other agents that are in a radius of the current agent.
+
+        The exact radius can be configured by adjusting the `chunk-size` option in the config.
+
+        This proximity method is 100% accurate as it calculates the exact distance between
+        the current agent and other agents that are in close proximity.
+        However, this distance calculation comes with quite the performance cost.
+        So if you do not need an exact radius, strongly consider using `in_close_proximity` instead.
+
+        `in_radius` is one of three methods to retrieve neighbouring agents:
+
+        1. `in_proximity`: agents in the same chunk are returned.
+        2. `in_close_proximity`: agents in the same chunk, as well as neighbouring chunks, are returned.
+        3. `in_radius`: agents within a radius are returned (most accurate but also very slow).
+        """
         return set(
-            filter(
-                lambda agent: agent.pos.distance_to(self.pos) <= radius,
-                self.proximity.in_surrounding_chunks(self),
-            )
+            agent
+            for agent in self.in_close_proximity()
+            if agent.pos.distance_to(self.pos) <= self.__proximity.chunk_size
         )
 
     def on_site(self) -> bool:
+        """Check whether the agent is currently on a site."""
+
         return bool(
             pg.sprite.spritecollideany(self, self.sites, pg.sprite.collide_mask)  # type: ignore
         )
 
     def freeze_movement(self):
+        """Freeze the movement of the agent. The movement can be continued by calling `continue_movement`."""
+
         self.__previous_move = self.move
         self.move = Vector2(0, 0)
 
     def continue_movement(self):
+        """Continue the movement of the agent by using the angle and speed of the agent before its movement was frozen."""
+
         if self.__previous_move is not None:
             self.move = self.__previous_move
             self.__previous_move = None

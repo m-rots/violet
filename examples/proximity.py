@@ -20,7 +20,7 @@ class Player(Agent):
 
     def update(self):
         # Visualising the "view" of the agent by displaying a white rectangle
-        chunk_size = self.proximity.chunk_size
+        chunk_size = self.config.chunk_size
 
         left = floor(self.pos.x / chunk_size) * chunk_size - chunk_size
         top = floor(self.pos.y / chunk_size) * chunk_size - chunk_size
@@ -41,14 +41,7 @@ class Player(Agent):
 
 class Proxyman(Agent):
     def update(self):
-        if next(
-            (
-                agent
-                for agent in self.within_distance(self.config.chunk_size)
-                if agent.id == -1
-            ),
-            False,
-        ):
+        if next((agent for agent in self.in_radius() if agent.id == -1), False):
             self.image = self.images[1]
         else:
             self.image = self.images[0]
