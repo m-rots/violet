@@ -46,6 +46,7 @@ class Agent(Sprite):
         self,
         id: int,  # unique identifier used in e.g. proximity calculation and stats engine
         containers: list[Group],  # sprite groups for rendering
+        movement_speed: float,
         images: list[Surface],
         area: Rect,
         obstacles: Group,
@@ -71,7 +72,7 @@ class Agent(Sprite):
         self.rect = self.image.get_rect()
 
         self.area = area
-        self.move = random_angle(0.5)
+        self.move = random_angle(movement_speed)
 
         # Obstacle Avoidance
         self.obstacles = obstacles

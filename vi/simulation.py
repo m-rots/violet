@@ -69,6 +69,7 @@ class Simulation:
             agent_class(
                 id=i,
                 containers=[self.all, self.agents],
+                movement_speed=self.config.movement_speed,
                 # Load each of the image paths into a blit-optimised Surface
                 images=load_images(image_paths),
                 area=self.screen.get_rect(),
@@ -85,6 +86,7 @@ class Simulation:
         agent_class(
             id=-1,
             containers=[self.all, self.agents],
+            movement_speed=self.config.movement_speed,
             # Load each of the image paths into a blit-optimised Surface
             images=load_images(image_paths),
             area=self.screen.get_rect(),

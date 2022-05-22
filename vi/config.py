@@ -8,6 +8,7 @@ from serde.toml import from_toml
 @dataclass
 class BaseConfig:
     agent_count: int = 100
+    movement_speed: float = 0.5
 
     # Proximity chunks
     chunk_size: int = 50
