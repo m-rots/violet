@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import random
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, Optional, TypeVar
 
 import pygame as pg
 from pygame.mask import Mask
@@ -31,6 +31,9 @@ class Agent(Sprite):
     area: Rect
     move: Vector2
     pos: Vector2
+
+    # Keep track of our previous-move vector (for freeze functionality)
+    __previous_move: Optional[Vector2] = None
 
     # Obstacle Avoidance
     obstacles: Group
@@ -164,3 +167,12 @@ class Agent(Sprite):
                 self.proximity.in_surrounding_chunks(self),
             )
         )
+
+    def freeze_movement(self):
+        self.__previous_move = self.move
+        self.move = Vector2(0, 0)
+
+    def continue_movement(self):
+        if self.__previous_move is not None:
+            self.move = self.__previous_move
+            self.__previous_move = None
