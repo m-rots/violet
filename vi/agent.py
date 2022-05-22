@@ -39,6 +39,9 @@ class Agent(Sprite):
     obstacles: Group
     mask: Mask
 
+    # Sites
+    sites: Group
+
     # Proximity
     proximity: ProximityEngine
 
@@ -53,6 +56,7 @@ class Agent(Sprite):
         images: list[Surface],
         area: Rect,
         obstacles: Group,
+        sites: Group,
         proximity: ProximityEngine,
         config: BaseConfig,
     ):
@@ -67,6 +71,9 @@ class Agent(Sprite):
         self.image = images[0]
         self.images = images
 
+        self.obstacles = obstacles
+        self.sites = sites
+
         # On spawn acts like the __init__ for non-pygame facing state.
         # It could be used to override the initial image if necessary.
         self.on_spawn()
@@ -78,7 +85,6 @@ class Agent(Sprite):
         self.move = random_angle(movement_speed)
 
         # Obstacle Avoidance
-        self.obstacles = obstacles
         self.mask = pg.mask.from_surface(self.image)
 
         # Keep changing the position until the position no longer collides with any obstacle.
@@ -166,6 +172,11 @@ class Agent(Sprite):
                 lambda agent: agent.pos.distance_to(self.pos) <= radius,
                 self.proximity.in_surrounding_chunks(self),
             )
+        )
+
+    def on_site(self) -> bool:
+        return bool(
+            pg.sprite.spritecollideany(self, self.sites, pg.sprite.collide_mask)  # type: ignore
         )
 
     def freeze_movement(self):

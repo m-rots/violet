@@ -58,6 +58,7 @@ class Simulation:
         self.all = pg.sprite.Group()
         self.agents = pg.sprite.Group()
         self.obstacles = pg.sprite.Group()
+        self.sites = pg.sprite.Group()
 
         # Proximity!
         self.proximity = ProximityEngine(self.agents, self.config.chunk_size)
@@ -74,6 +75,7 @@ class Simulation:
                 images=load_images(image_paths),
                 area=self.screen.get_rect(),
                 obstacles=self.obstacles,
+                sites=self.sites,
                 proximity=self.proximity,
                 config=self.config,
             )
@@ -91,6 +93,7 @@ class Simulation:
             images=load_images(image_paths),
             area=self.screen.get_rect(),
             obstacles=self.obstacles,
+            sites=self.sites,
             proximity=self.proximity,
             config=self.config,
         )
@@ -100,6 +103,15 @@ class Simulation:
     def spawn_obstacle(self, image_path: str, x: int, y: int) -> Simulation:
         Obstacle(
             containers=[self.all, self.obstacles],
+            image=load_image(image_path),
+            pos=Vector2((x, y)),
+        )
+
+        return self
+
+    def spawn_site(self, image_path: str, x: int, y: int) -> Simulation:
+        Obstacle(
+            containers=[self.all, self.sites],
             image=load_image(image_path),
             pos=Vector2((x, y)),
         )
