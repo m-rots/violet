@@ -11,6 +11,7 @@ from pygame.sprite import Group, Sprite
 from pygame.surface import Surface
 
 from .config import BaseConfig
+from .metrics import Snapshot
 from .util import random_angle, random_pos, round_pos
 
 if TYPE_CHECKING:
@@ -137,7 +138,7 @@ class Agent(Sprite):
         To add your own logic, inherit the `Agent` class and override this method with your own.
         """
 
-        pass
+        ...
 
     def on_spawn(self):
         """Run any code when the agent is spawned into the simulation.
@@ -151,7 +152,7 @@ class Agent(Sprite):
         - Changing the image or state of your Agent depending on its assigned identifier.
         """
 
-        pass
+        ...
 
     def there_is_no_escape(self) -> bool:
         """Pac-Man-style teleport the agent to the other side of the screen when it is outside of the playable area."""
@@ -299,3 +300,19 @@ class Agent(Sprite):
         if self.__previous_move is not None:
             self.move = self.__previous_move
             self.__previous_move = None
+
+    def snapshot(self, frame: int) -> Snapshot:
+        """Create a Snapshot of agent data that you're interested in.
+
+        By default the Agent will produce a Snapshot with the following data:
+        - agent identifier
+        - current frame
+        - x and y coordinates
+
+        However, you can also add your own data by inheriting the Snapshot dataclass.
+        Add any fields that you like and then overwrite this method to produce your custom Snapshot.
+
+        Make sure to call `super().snapshot(frame)` to collect the default Snapshot data.
+        """
+
+        return Snapshot(x=self.pos.x, y=self.pos.y, id=self.id, frame=frame)
