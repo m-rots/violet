@@ -65,6 +65,10 @@ class Simulation:
     """
 
     __metrics: Metrics
+    """A collection of all the Snapshots that have been created in the simulation.
+    
+    Each agent produces a Snapshot at every frame in the simulation.
+    """
 
     __prng_move: random.Random
     """A PRNG for agent movement exclusively.
@@ -259,7 +263,7 @@ class Simulation:
         # Update all agents
         self._all.update()
 
-        # Snapshot important agent data
+        # Snapshot marked agent data
         self.__save_snapshots()
 
         # Draw everything to the screen

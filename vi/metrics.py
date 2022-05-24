@@ -11,18 +11,30 @@ if TYPE_CHECKING:
 
 @dataclass
 class Snapshot:
+    """Data that's collected for every agent in every frame of the simulation."""
+
     frame: int
+    """The current frame of the simulation."""
+
     id: int
+    """The identifier of the agent."""
 
     x: float
+    """The x coordinate of the agent."""
+
     y: float
+    """The y coordinate of the agent."""
 
     def as_dict(self) -> dict[str, Any]:
+        """Convert this Snapshot into a dictionary."""
+
         return dataclasses.asdict(self)
 
 
 @dataclass
 class Metrics:
+    """A container hosting all the accumulated Snapshots over time."""
+
     snapshots: list[dict[str, Any]] = field(default_factory=list)
 
     def to_pandas(self) -> PandasDataFrame:
