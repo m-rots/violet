@@ -33,7 +33,7 @@ from vi import Agent, Simulation
 Vi makes use of [Poetry](https://python-poetry.org/docs/) for dependency management and virtual environments. Once Poetry is installed, you can setup the venv and install the dependencies with:
 
 ```
-poetry install
+poetry install -E full
 ```
 
 ### Running the examples

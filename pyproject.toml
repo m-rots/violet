@@ -9,6 +9,9 @@ repository = "https://github.com/m-rots/violet"
 python = "^3.9"
 pygame = "^2.1.2"
 pyserde = { extras = ["toml"], version = "^0.7.3" }
+
+# Optional DataFrame libraries
+pandas = { version = "^1.4.2", optional = true }
 polars = { version = "^0.13.38", optional = true }
 
 [tool.poetry.dev-dependencies]
@@ -16,7 +19,9 @@ black = "^22.3.0"
 isort = "^5.10.1"
 
 [tool.poetry.extras]
+pandas = ["pandas"]
 polars = ["polars"]
+full = ["pandas", "polars"] # all features
 
 [tool.isort]
 profile = "black"

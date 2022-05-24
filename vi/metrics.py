@@ -5,7 +5,8 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from polars import DataFrame
+    from pandas import DataFrame as PandasDataFrame
+    from polars import DataFrame as PolarsDataFrame
 
 
 @dataclass
@@ -24,7 +25,12 @@ class Snapshot:
 class Metrics:
     snapshots: list[dict[str, Any]] = field(default_factory=list)
 
-    def to_polars(self) -> DataFrame:
+    def to_pandas(self) -> PandasDataFrame:
+        import pandas as pd
+
+        return pd.DataFrame(self.snapshots)
+
+    def to_polars(self) -> PolarsDataFrame:
         import polars as pl
 
         return pl.from_dicts(self.snapshots)
