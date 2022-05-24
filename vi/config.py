@@ -20,6 +20,12 @@ class BaseConfig:
     movement_speed: float = 0.5
     """The per-frame movement speed of the agents."""
 
+    seed: Optional[int] = None
+    """The PRNG seed to use for the simulation.
+    
+    Defaults to `None`, indicating that no seed is used.
+    """
+
     # Proximity chunks
     chunk_size: int = 50
     """The size of the proximity chunks in pixels."""

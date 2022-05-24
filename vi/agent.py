@@ -74,6 +74,14 @@ class Agent(Sprite):
     2. Be decorated by `@serde`
     """
 
+    __prng_move: random.Random
+    """A PRNG for agent movement exclusively.
+    
+    To make sure that the agent's movement isn't influenced by other random function calls,
+    all agents share a decoupled PRNG for movement exclusively.
+    This ensures that the agents will always move the exact same way given a seed.
+    """
+
     def __init__(
         self,
         id: int,  # unique identifier used in e.g. proximity calculation and stats engine
@@ -85,11 +93,13 @@ class Agent(Sprite):
         sites: Group,
         proximity: ProximityEngine,
         config: BaseConfig,
+        prng_move: random.Random,
     ):
         Sprite.__init__(self, *containers)
 
         self.id = id
         self.config = config
+        self.__prng_move = prng_move
 
         self.__proximity = proximity
 
@@ -101,7 +111,7 @@ class Agent(Sprite):
         self.sites = sites
 
         self.area = area
-        self.move = random_angle(movement_speed)
+        self.move = random_angle(movement_speed, prng=prng_move)
 
         # On spawn acts like the __init__ for non-pygame facing state.
         # It could be used to override the initial image if necessary.
@@ -113,7 +123,7 @@ class Agent(Sprite):
 
         # Keep changing the position until the position no longer collides with any obstacle.
         while True:
-            self.pos = random_pos(self.area)
+            self.pos = random_pos(self.area, prng=prng_move)
             self.rect.center = round_pos(self.pos)
 
             obstacle_hit = pg.sprite.spritecollideany(self, self.obstacles, pg.sprite.collide_mask)  # type: ignore
@@ -177,8 +187,10 @@ class Agent(Sprite):
         """
         changed = self.there_is_no_escape()
 
+        prng = self.__prng_move
+
         # Always calculate the random angle so a seed could be used.
-        deg = random.uniform(-30, 30)
+        deg = prng.uniform(-30, 30)
 
         # Only update angle if the agent was teleported to a different area of the simulation.
         if changed:
@@ -194,8 +206,8 @@ class Agent(Sprite):
 
         # Random opportunity to slightly change angle.
         # Probabilities are pre-computed so a seed could be used.
-        should_change_angle = random.random()
-        deg = random.uniform(-10, 10)
+        should_change_angle = prng.random()
+        deg = prng.uniform(-10, 10)
 
         # Only allow the angle opportunity to take place when no collisions have occured.
         # This is done so an agent always turns 180 degrees. Any small change in the number of degrees

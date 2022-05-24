@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import random
 from typing import TYPE_CHECKING, Optional, Type, TypeVar
 
 import pygame as pg
@@ -62,10 +63,25 @@ class Simulation:
     2. Be decorated by `@serde`
     """
 
+    __prng_move: random.Random
+    """A PRNG for agent movement exclusively.
+    
+    To make sure that the agent's movement isn't influenced by other random function calls,
+    all agents share a decoupled PRNG for movement exclusively.
+    This ensures that the agents will always move the exact same way given a seed.
+    """
+
     def __init__(self, config: Optional[BaseConfig] = None):
         pg.init()
 
         self.config = config if config else BaseConfig()
+
+        # Initiate the seed as early as possible.
+        random.seed(self.config.seed)
+
+        # Using a custom generator for agent movement
+        self.__prng_move = random.Random()
+        self.__prng_move.seed(self.config.seed)
 
         # Create a 400x400 pixel screen
         self._screen = pg.display.set_mode((self.config.width, self.config.height))
@@ -115,6 +131,7 @@ class Simulation:
                 sites=self._sites,
                 proximity=self._proximity,
                 config=self.config,
+                prng_move=self.__prng_move,
             )
 
         return self
@@ -139,6 +156,7 @@ class Simulation:
             sites=self._sites,
             proximity=self._proximity,
             config=self.config,
+            prng_move=self.__prng_move,
         )
 
         return self

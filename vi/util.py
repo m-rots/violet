@@ -1,4 +1,5 @@
 import random
+from typing import Optional
 
 import pygame as pg
 from pygame.math import Vector2
@@ -6,7 +7,7 @@ from pygame.rect import Rect
 from pygame.surface import Surface
 
 
-def probability(threshold: float) -> bool:
+def probability(threshold: float, prng: Optional[random.Random] = None) -> bool:
     """Randomly retrieve True or False depending on the given probability.
 
     The probability should be between 0 and 1.
@@ -14,7 +15,8 @@ def probability(threshold: float) -> bool:
     Likewise, if you give a probability equal or lower than 0, this function will always return False.
     """
 
-    return threshold > random.random()
+    get_random = prng.random if prng else random.random
+    return threshold > get_random()
 
 
 def round_pos(pos: Vector2) -> tuple[int, int]:
@@ -35,17 +37,21 @@ def load_images(image_paths: list[str]) -> list[Surface]:
     return list(map(load_image, image_paths))
 
 
-def random_angle(lenght: float) -> Vector2:
+def random_angle(lenght: float, prng: Optional[random.Random] = None) -> Vector2:
     """Retrieve a randomly-angled vector with a given length."""
 
+    uniform = prng.uniform if prng else random.uniform
+
     vec = Vector2(lenght, 0)
-    vec.rotate_ip(random.uniform(0, 360))
+    vec.rotate_ip(uniform(0, 360))
     return vec
 
 
-def random_pos(area: Rect) -> Vector2:
+def random_pos(area: Rect, prng: Optional[random.Random] = None) -> Vector2:
     """Retrieve a random position within an area."""
 
-    x = random.uniform(area.left, area.right)
-    y = random.uniform(area.top, area.bottom)
+    uniform = prng.uniform if prng else random.uniform
+
+    x = uniform(area.left, area.right)
+    y = uniform(area.top, area.bottom)
     return Vector2(x, y)
