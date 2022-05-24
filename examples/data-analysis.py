@@ -23,7 +23,7 @@ class MyAgent(Agent):
 
 
 print(
-    Simulation(BaseConfig(chunk_size=25, duration=10, seed=1))
+    Simulation(BaseConfig(chunk_size=25, duration=300, seed=1))
     .batch_spawn_agents(
         MyAgent,  # 👈 use our own MyAgent class
         image_paths=[
@@ -33,7 +33,9 @@ print(
     )
     .run()
     .to_polars()
-    .filter(pl.col("frame") == 1)
-    .filter(pl.col("in_radius") > 1)
-    .select(["id", "in_radius"])
+    .groupby("frame")
+    # Count the number of agents that see at least one other agent (making them red)
+    .agg((pl.col("in_radius") > 0).sum().alias("# red agents"))
+    .select("# red agents")
+    .describe()
 )
