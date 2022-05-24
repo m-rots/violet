@@ -48,7 +48,7 @@ class Proxyman(Agent):
 
 
 (
-    Simulation(BaseConfig.from_file("examples/proximity.toml"))
+    Simulation(BaseConfig.from_file("examples/proximity-player.toml"))
     .batch_spawn_agents(
         Proxyman,
         image_paths=[
