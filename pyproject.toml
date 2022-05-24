@@ -9,10 +9,14 @@ repository = "https://github.com/m-rots/violet"
 python = "^3.9"
 pygame = "^2.1.2"
 pyserde = { extras = ["toml"], version = "^0.7.3" }
+polars = { version = "^0.13.38", optional = true }
 
 [tool.poetry.dev-dependencies]
 black = "^22.3.0"
 isort = "^5.10.1"
+
+[tool.poetry.extras]
+polars = ["polars"]
 
 [tool.isort]
 profile = "black"
