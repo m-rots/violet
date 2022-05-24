@@ -60,7 +60,7 @@ class Agent(Sprite):
     """The Proximity Engine used for all proximity-related methods.
     
     The proximity engine is private (double underscore prefix) as one could retrieve all agents with it.
-    Therefore, the Agent class provides the (public) `in_proximity`, `in_close_proximity` and `in_radius` wrapper methods instead.
+    Therefore, the Agent class provides the (public) `in_same_cell`, `in_proximity` and `in_radius` wrapper methods instead.
     """
 
     # Config (shared with other agents too)
@@ -219,41 +219,41 @@ class Agent(Sprite):
         self.pos += self.move
 
     # TODO: rename method to better convey that only agents in the same chunk are returned.
-    def in_proximity(self: T) -> set[T]:
+    def in_same_cell(self: T) -> set[T]:
         """Retrieve other agents that are in the same chunk as the current agent.
 
         Tweaking the effective proximity radius can be done by modifying the `chunk-size` option in the config.
 
         This proximity method is quite inaccurate and should not be used.
-        Instead, the use of `in_close_proximity` is strongly preferred as it has the same performance characteristics,
+        Instead, the use of `in_proximity` is strongly preferred as it has the same performance characteristics,
         but significantly improves the accuracy.
 
-        `in_proximity` is one of three methods to retrieve neighbouring agents:
+        `in_same_cell` is one of three methods to retrieve neighbouring agents:
 
-        1. `in_proximity`: agents in the same chunk are returned.
-        2. `in_close_proximity`: agents in the same chunk, as well as neighbouring chunks, are returned.
+        1. `in_same_cell`: agents in the same chunk are returned.
+        2. `in_proximity`: agents in the same chunk, as well as neighbouring chunks, are returned.
         3. `in_radius`: agents within a radius are returned (most accurate but also very slow).
         """
         return self.__proximity.in_same_chunk(self)
 
-    def in_close_proximity(self: T) -> set[T]:
+    def in_proximity(self: T) -> set[T]:
         """Retrieve other agents that are in proximity of the current agent.
 
         Agent proximity is determined by retrieving the chunk the agent is currently in,
         as well as 8 neighbouring chunks, to retrieve a total of 9 chunks.
         All agents, other than the current agent, that appear in these chunks are considered to be in proximity.
 
-        This proximity method is strongly preferred over `in_proximity` as it better accounts for cases where two agents
+        This proximity method is strongly preferred over `in_same_cell` as it better accounts for cases where two agents
         are perhaps one pixel apart, but both are in a different chunk.
         By also retrieving the neighbouring pixels, the accuracy is improved considerably.
 
         Tweaking the effective proximity radius can be done by modifying the `chunk-size` option in the config.
         Note that this proximity method retrieves 3x the chunk-size, so adjust the chunk size accordingly.
 
-        `in_close_proximity` is one of three methods to retrieve neighbouring agents:
+        `in_proximity` is one of three methods to retrieve neighbouring agents:
 
-        1. `in_proximity`: agents in the same chunk are returned.
-        2. `in_close_proximity`: agents in the same chunk, as well as neighbouring chunks, are returned.
+        1. `in_same_cell`: agents in the same chunk are returned.
+        2. `in_proximity`: agents in the same chunk, as well as neighbouring chunks, are returned.
         3. `in_radius`: agents within a radius are returned (most accurate but also very slow).
         """
         return self.__proximity.in_surrounding_chunks(self)
@@ -266,17 +266,17 @@ class Agent(Sprite):
         This proximity method is 100% accurate as it calculates the exact distance between
         the current agent and other agents that are in close proximity.
         However, this distance calculation comes with quite the performance cost.
-        So if you do not need an exact radius, strongly consider using `in_close_proximity` instead.
+        So if you do not need an exact radius, strongly consider using `in_proximity` instead.
 
         `in_radius` is one of three methods to retrieve neighbouring agents:
 
-        1. `in_proximity`: agents in the same chunk are returned.
-        2. `in_close_proximity`: agents in the same chunk, as well as neighbouring chunks, are returned.
+        1. `in_same_cell`: agents in the same chunk are returned.
+        2. `in_proximity`: agents in the same chunk, as well as neighbouring chunks, are returned.
         3. `in_radius`: agents within a radius are returned (most accurate but also very slow).
         """
         return set(
             agent
-            for agent in self.in_close_proximity()
+            for agent in self.in_proximity()
             if agent.pos.distance_to(self.pos) <= self.__proximity.chunk_size
         )
 
