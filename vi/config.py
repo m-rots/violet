@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Optional
 
 from serde import serde
 from serde.toml import from_toml
@@ -9,6 +10,12 @@ from serde.toml import from_toml
 class BaseConfig:
     agent_count: int = 100
     """The number of agents that are spawned when calling `batch_spawn_agents`."""
+
+    duration: Optional[int] = None
+    """The duration of the simulation in frames.
+    
+    Defaults to `None`, indicating that the simulation runs indefinitely.
+    """
 
     movement_speed: float = 0.5
     """The per-frame movement speed of the agents."""

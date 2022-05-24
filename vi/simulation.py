@@ -194,6 +194,10 @@ class Simulation:
 
         self.counter += 1
 
+        # If we've reached the duration of the simulation, then stop the simulation.
+        if self.counter == self.config.duration:
+            self.stop()
+
         rebound = []
         for event in pg.event.get(eventtype=[pg.QUIT, pg.KEYDOWN]):
             if event.type == pg.QUIT:
