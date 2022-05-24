@@ -120,6 +120,15 @@ class Agent(Sprite):
             if not bool(obstacle_hit) and self.area.contains(self.rect):
                 break
 
+    def update(self):
+        """Run your own agent logic at every tick of the simulation.
+        Every frame of the simulation, this update method is called automatically for every agent of the simulation.
+
+        To add your own logic, inherit the `Agent` class and override this method with your own.
+        """
+
+        pass
+
     def on_spawn(self):
         """Run any code when the agent is spawned into the simulation.
 
