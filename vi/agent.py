@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-import random
-from typing import TYPE_CHECKING, Any, Optional, TypeVar
+from typing import TYPE_CHECKING, Optional, TypeVar
 
 import pygame as pg
 from pygame.mask import Mask
@@ -308,7 +307,7 @@ class Agent(Sprite):
         However, you can also add your own data by inheriting the Snapshot dataclass.
         Add any fields that you like and then overwrite this method to produce your custom Snapshot.
 
-        Make sure to call `super().snapshot(frame)` to collect the default Snapshot data.
+        Make sure to call `super().snapshot()` to collect the default Snapshot data.
         """
 
         return Snapshot(

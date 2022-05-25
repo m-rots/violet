@@ -16,30 +16,19 @@ Or with Poetry:
 poetry add "git+https://github.com/m-rots/violet.git#main"
 ```
 
-## A Simple Example
+## Example
 
 ```python
 from vi import Agent, Simulation
 
 (
+    # Step 1: Create a new simulation.
     Simulation()
+    # Step 2: Add agents to the simulation.
     .batch_spawn_agents(Agent, image_paths=["examples/images/white.png"])
+    # Step 3: Profit! 🎉
     .run()
 )
 ```
 
-## Contributing
-
-Vi makes use of [Poetry](https://python-poetry.org/docs/) for dependency management and virtual environments. Once Poetry is installed, you can setup the venv and install the dependencies with:
-
-```
-poetry install -E full
-```
-
-### Running the examples
-
-Once Poetry is installed, you can run the [`proximity.py`](./examples/proximity.py) example with:
-
-```
-poetry run python examples/proximity.py
-```
+For more information you can check the [docs](https://violet.m-rots.com) or the [examples](https://github.com/m-rots/violet/tree/main/examples).
