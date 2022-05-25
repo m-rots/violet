@@ -17,7 +17,7 @@ class MyAgent(Agent):
 
     def snapshot(self) -> MySnapshot:
         return MySnapshot(
-            **super().default(),
+            **super().snapshot().as_dict(),
             in_radius=len(self.in_radius()),
         )
 

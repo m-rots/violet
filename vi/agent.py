@@ -317,11 +317,3 @@ class Agent(Sprite):
             id=self.id,
             frame=self.shared.counter,
         )
-
-    def default(self) -> dict[str, Any]:
-        """Get the default values of a Snapshot as a dictionary.
-
-        This function acts as a utility to construct inherited Snapshot dataclasses easier.
-        """
-
-        return self.snapshot().as_dict()
