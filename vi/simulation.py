@@ -286,7 +286,7 @@ class Simulation:
         self._clock.tick(60)
 
         current_fps = self._clock.get_fps()
-        if current_fps > 0:
+        if current_fps > 0 and self.config.print_fps:
             print(f"FPS: {current_fps:.1f}")
 
     def stop(self):
