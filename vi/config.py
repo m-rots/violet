@@ -26,6 +26,10 @@ class BaseConfig:
     Defaults to `None`, indicating that no seed is used.
     """
 
+    # Stdout
+    print_fps: bool = False
+    """Print the current number of frames-per-second in the terminal"""
+
     # Proximity chunks
     chunk_size: int = 50
     """The size of the proximity chunks in pixels."""

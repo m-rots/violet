@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import random
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Optional, Type, TypeVar
 
 import pygame as pg
@@ -8,6 +9,7 @@ from pygame.gfxdraw import hline, vline
 from pygame.math import Vector2
 
 from .config import BaseConfig
+from .metrics import Metrics
 from .obstacle import Obstacle
 from .proximity import ProximityEngine
 from .util import load_image, load_images, round_pos
@@ -16,6 +18,20 @@ if TYPE_CHECKING:
     from .agent import Agent
 
     AgentClass = TypeVar("AgentClass", bound=Agent)
+
+
+@dataclass
+class Shared:
+    prng_move: random.Random
+    """A PRNG for agent movement exclusively.
+    
+    To make sure that the agent's movement isn't influenced by other random function calls,
+    all agents share a decoupled PRNG for movement exclusively.
+    This ensures that the agents will always move the exact same way given a seed.
+    """
+
+    counter: int = 0
+    """A counter that increases each tick of the simulation."""
 
 
 class Simulation:
@@ -33,8 +49,8 @@ class Simulation:
     If a custom config isn't provided when creating the simulation, the default values of `BaseConfig` will be used instead.
     """
 
-    counter: int = 0
-    """A counter that increases each tick of the simulation."""
+    shared: Shared
+    """Attributes that are shared between the simulation and all agents."""
 
     _running: bool = False
     """The simulation keeps running as long as running is True."""
@@ -63,27 +79,27 @@ class Simulation:
     2. Be decorated by `@serde`
     """
 
-    __prng_move: random.Random
-    """A PRNG for agent movement exclusively.
+    __metrics: Metrics
+    """A collection of all the Snapshots that have been created in the simulation.
     
-    To make sure that the agent's movement isn't influenced by other random function calls,
-    all agents share a decoupled PRNG for movement exclusively.
-    This ensures that the agents will always move the exact same way given a seed.
+    Each agent produces a Snapshot at every frame in the simulation.
     """
 
     def __init__(self, config: Optional[BaseConfig] = None):
         pg.init()
 
         self.config = config if config else BaseConfig()
+        self.__metrics = Metrics()
 
         # Initiate the seed as early as possible.
         random.seed(self.config.seed)
 
         # Using a custom generator for agent movement
-        self.__prng_move = random.Random()
-        self.__prng_move.seed(self.config.seed)
+        prng_move = random.Random()
+        prng_move.seed(self.config.seed)
 
-        # Create a 400x400 pixel screen
+        self.shared = Shared(prng_move=prng_move)
+
         self._screen = pg.display.set_mode((self.config.width, self.config.height))
 
         pg.display.set_caption("Violet")
@@ -131,7 +147,7 @@ class Simulation:
                 sites=self._sites,
                 proximity=self._proximity,
                 config=self.config,
-                prng_move=self.__prng_move,
+                shared=self.shared,
             )
 
         return self
@@ -156,7 +172,7 @@ class Simulation:
             sites=self._sites,
             proximity=self._proximity,
             config=self.config,
-            prng_move=self.__prng_move,
+            shared=self.shared,
         )
 
         return self
@@ -186,7 +202,7 @@ class Simulation:
 
         return self
 
-    def run(self):
+    def run(self) -> Metrics:
         """Run the simulation until it's ended by closing the window."""
 
         self._running = True
@@ -195,6 +211,8 @@ class Simulation:
             self.tick()
 
         pg.quit()
+
+        return self.__metrics
 
     def before_update(self):
         """Run any code before the agents are updated in every tick.
@@ -210,10 +228,10 @@ class Simulation:
     def tick(self):
         """Advance the simulation with one tick."""
 
-        self.counter += 1
+        self.shared.counter += 1
 
         # If we've reached the duration of the simulation, then stop the simulation.
-        if self.counter == self.config.duration:
+        if self.shared.counter == self.config.duration:
             self.stop()
 
         rebound = []
@@ -254,6 +272,9 @@ class Simulation:
         # Update all agents
         self._all.update()
 
+        # Snapshot marked agent data
+        self.__save_snapshots()
+
         # Draw everything to the screen
         self._all.draw(self._screen)
 
@@ -265,7 +286,7 @@ class Simulation:
         self._clock.tick(60)
 
         current_fps = self._clock.get_fps()
-        if current_fps > 0:
+        if current_fps > 0 and self.config.print_fps:
             print(f"FPS: {current_fps:.1f}")
 
     def stop(self):
@@ -285,6 +306,15 @@ class Simulation:
             agent.update_position()
 
             agent.rect.center = round_pos(agent.pos)
+
+    def __save_snapshots(self):
+        """Save a Snapshot of each agent and add it to Metrics."""
+
+        for sprite in self._agents.sprites():
+            agent: Agent = sprite  # type: ignore
+            snapshot = agent.snapshot()
+
+            self.__metrics.snapshots.append(snapshot.as_dict())
 
     def __visualise_chunks(self):
         """Visualise the proximity chunks by drawing their borders."""
