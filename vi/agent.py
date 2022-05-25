@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import random
-from typing import TYPE_CHECKING, Optional, TypeVar
+from typing import TYPE_CHECKING, Any, Optional, TypeVar
 
 import pygame as pg
 from pygame.mask import Mask
@@ -16,6 +16,7 @@ from .util import random_angle, random_pos, round_pos
 
 if TYPE_CHECKING:
     from .proximity import ProximityEngine
+    from .simulation import Shared
 
 
 T = TypeVar("T", bound="Agent")
@@ -75,13 +76,8 @@ class Agent(Sprite):
     2. Be decorated by `@serde`
     """
 
-    __prng_move: random.Random
-    """A PRNG for agent movement exclusively.
-    
-    To make sure that the agent's movement isn't influenced by other random function calls,
-    all agents share a decoupled PRNG for movement exclusively.
-    This ensures that the agents will always move the exact same way given a seed.
-    """
+    shared: Shared
+    """Attributes that are shared between the simulation and all agents."""
 
     def __init__(
         self,
@@ -94,13 +90,13 @@ class Agent(Sprite):
         sites: Group,
         proximity: ProximityEngine,
         config: BaseConfig,
-        prng_move: random.Random,
+        shared: Shared,
     ):
         Sprite.__init__(self, *containers)
 
         self.id = id
         self.config = config
-        self.__prng_move = prng_move
+        self.shared = shared
 
         self.__proximity = proximity
 
@@ -112,7 +108,7 @@ class Agent(Sprite):
         self.sites = sites
 
         self.area = area
-        self.move = random_angle(movement_speed, prng=prng_move)
+        self.move = random_angle(movement_speed, prng=shared.prng_move)
 
         # On spawn acts like the __init__ for non-pygame facing state.
         # It could be used to override the initial image if necessary.
@@ -124,7 +120,7 @@ class Agent(Sprite):
 
         # Keep changing the position until the position no longer collides with any obstacle.
         while True:
-            self.pos = random_pos(self.area, prng=prng_move)
+            self.pos = random_pos(self.area, prng=shared.prng_move)
             self.rect.center = round_pos(self.pos)
 
             obstacle_hit = pg.sprite.spritecollideany(self, self.obstacles, pg.sprite.collide_mask)  # type: ignore
@@ -188,7 +184,7 @@ class Agent(Sprite):
         """
         changed = self.there_is_no_escape()
 
-        prng = self.__prng_move
+        prng = self.shared.prng_move
 
         # Always calculate the random angle so a seed could be used.
         deg = prng.uniform(-30, 30)
@@ -301,7 +297,7 @@ class Agent(Sprite):
             self.move = self.__previous_move
             self.__previous_move = None
 
-    def snapshot(self, frame: int) -> Snapshot:
+    def snapshot(self) -> Snapshot:
         """Create a Snapshot of agent data that you're interested in.
 
         By default the Agent will produce a Snapshot with the following data:
@@ -315,4 +311,17 @@ class Agent(Sprite):
         Make sure to call `super().snapshot(frame)` to collect the default Snapshot data.
         """
 
-        return Snapshot(x=self.pos.x, y=self.pos.y, id=self.id, frame=frame)
+        return Snapshot(
+            x=self.pos.x,
+            y=self.pos.y,
+            id=self.id,
+            frame=self.shared.counter,
+        )
+
+    def default(self) -> dict[str, Any]:
+        """Get the default values of a Snapshot as a dictionary.
+
+        This function acts as a utility to construct inherited Snapshot dataclasses easier.
+        """
+
+        return self.snapshot().as_dict()

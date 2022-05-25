@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import random
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Optional, Type, TypeVar
 
 import pygame as pg
@@ -19,6 +20,20 @@ if TYPE_CHECKING:
     AgentClass = TypeVar("AgentClass", bound=Agent)
 
 
+@dataclass
+class Shared:
+    prng_move: random.Random
+    """A PRNG for agent movement exclusively.
+    
+    To make sure that the agent's movement isn't influenced by other random function calls,
+    all agents share a decoupled PRNG for movement exclusively.
+    This ensures that the agents will always move the exact same way given a seed.
+    """
+
+    counter: int = 0
+    """A counter that increases each tick of the simulation."""
+
+
 class Simulation:
     """The simulation class provides a snapshot of the current tick of the simulation.
 
@@ -34,8 +49,8 @@ class Simulation:
     If a custom config isn't provided when creating the simulation, the default values of `BaseConfig` will be used instead.
     """
 
-    counter: int = 0
-    """A counter that increases each tick of the simulation."""
+    shared: Shared
+    """Attributes that are shared between the simulation and all agents."""
 
     _running: bool = False
     """The simulation keeps running as long as running is True."""
@@ -70,14 +85,6 @@ class Simulation:
     Each agent produces a Snapshot at every frame in the simulation.
     """
 
-    __prng_move: random.Random
-    """A PRNG for agent movement exclusively.
-    
-    To make sure that the agent's movement isn't influenced by other random function calls,
-    all agents share a decoupled PRNG for movement exclusively.
-    This ensures that the agents will always move the exact same way given a seed.
-    """
-
     def __init__(self, config: Optional[BaseConfig] = None):
         pg.init()
 
@@ -88,8 +95,10 @@ class Simulation:
         random.seed(self.config.seed)
 
         # Using a custom generator for agent movement
-        self.__prng_move = random.Random()
-        self.__prng_move.seed(self.config.seed)
+        prng_move = random.Random()
+        prng_move.seed(self.config.seed)
+
+        self.shared = Shared(prng_move=prng_move)
 
         self._screen = pg.display.set_mode((self.config.width, self.config.height))
 
@@ -138,7 +147,7 @@ class Simulation:
                 sites=self._sites,
                 proximity=self._proximity,
                 config=self.config,
-                prng_move=self.__prng_move,
+                shared=self.shared,
             )
 
         return self
@@ -163,7 +172,7 @@ class Simulation:
             sites=self._sites,
             proximity=self._proximity,
             config=self.config,
-            prng_move=self.__prng_move,
+            shared=self.shared,
         )
 
         return self
@@ -219,10 +228,10 @@ class Simulation:
     def tick(self):
         """Advance the simulation with one tick."""
 
-        self.counter += 1
+        self.shared.counter += 1
 
         # If we've reached the duration of the simulation, then stop the simulation.
-        if self.counter == self.config.duration:
+        if self.shared.counter == self.config.duration:
             self.stop()
 
         rebound = []
@@ -303,7 +312,7 @@ class Simulation:
 
         for sprite in self._agents.sprites():
             agent: Agent = sprite  # type: ignore
-            snapshot = agent.snapshot(self.counter)
+            snapshot = agent.snapshot()
 
             self.__metrics.snapshots.append(snapshot.as_dict())
 

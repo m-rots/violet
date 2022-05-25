@@ -15,9 +15,9 @@ class MyAgent(Agent):
         else:
             self.image = self.images[0]
 
-    def snapshot(self, frame: int) -> MySnapshot:
+    def snapshot(self) -> MySnapshot:
         return MySnapshot(
-            **super().snapshot(frame).as_dict(),
+            **super().default(),
             in_radius=len(self.in_radius()),
         )
 
