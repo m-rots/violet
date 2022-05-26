@@ -3,7 +3,7 @@ from math import floor
 import pygame as pg
 from pygame.gfxdraw import circle, rectangle
 
-from vi import Agent, BaseConfig, Simulation
+from vi import Agent, BaseConfig, Simulation, Window
 
 
 class Player(Agent):
@@ -63,9 +63,8 @@ class Proxyman(Agent):
 config = BaseConfig(
     agent_count=1000,
     chunk_size=25,
-    height=500,
-    width=500,
     visualise_chunks=True,
+    window=Window.square(500),
 )
 
 (

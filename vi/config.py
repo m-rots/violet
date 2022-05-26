@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional
 
 from serde import serde
@@ -7,7 +7,30 @@ from serde.toml import from_toml
 
 @serde
 @dataclass
+class Window:
+    """Settings related to the simulation window."""
+
+    width: int = 750
+    """The width of the simulation window in pixels."""
+
+    height: int = 750
+    """The height of the simulation window in pixels."""
+
+    @classmethod
+    def square(cls, size: int):
+        return cls(width=size, height=size)
+
+    def as_tuple(self) -> tuple[int, int]:
+        return (self.width, self.height)
+
+
+@serde
+@dataclass
 class BaseConfig:
+    # Default factories have to be defined first!
+    window: Window = field(default_factory=Window)
+    """The simulation window"""
+
     agent_count: int = 100
     """The number of agents that are spawned when calling `batch_spawn_agents`."""
 
@@ -36,13 +59,6 @@ class BaseConfig:
 
     visualise_chunks: bool = False
     """Draw the borders of the proximity-chunks on screen."""
-
-    # Screen
-    width: int = 750
-    """The width of the simulation window in pixels."""
-
-    height: int = 750
-    """The height of the simulation window in pixels."""
 
     @classmethod
     def from_file(cls, file_name: str):

@@ -86,7 +86,7 @@ class Simulation:
     """
 
     def __init__(self, config: Optional[BaseConfig] = None):
-        pg.init()
+        pg.display.init()
 
         self.config = config if config else BaseConfig()
         self.__metrics = Metrics()
@@ -100,7 +100,7 @@ class Simulation:
 
         self.shared = Shared(prng_move=prng_move)
 
-        self._screen = pg.display.set_mode((self.config.width, self.config.height))
+        self._screen = pg.display.set_mode(self.config.window.as_tuple())
 
         pg.display.set_caption("Violet")
 
@@ -322,7 +322,7 @@ class Simulation:
         colour = pg.Color(255, 255, 255, 122)
         chunk_size = self._proximity.chunk_size
 
-        width, height = self.config.width, self.config.height
+        width, height = self.config.window.as_tuple()
 
         for x in range(chunk_size, width, chunk_size):
             vline(self._screen, x, 0, height, colour)
