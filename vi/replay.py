@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 import pygame as pg
 
@@ -68,14 +68,19 @@ class TimeMachine:
                 self.running = False
                 break
 
-            data = self.history[self.index]
+            data: dict[str, Any] = self.history[self.index]
             if data["frame"] != current_frame:
                 break
 
             image_index = data["image_index"]
             image = self.images[image_index]
+
+            angle = data.get("angle")
+            if angle is not None:
+                image = pg.transform.rotate(image, angle)
+
             rect = image.get_rect()
-            rect.center = (round(data["x"]), round(data["y"]))
+            rect.center = (data["x"], data["y"])
 
             self.screen.blit(image, rect)
             self.index += 1

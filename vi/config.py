@@ -40,6 +40,13 @@ class BaseConfig:
     Defaults to `None`, indicating that the simulation runs indefinitely.
     """
 
+    image_rotation: bool = False
+    """Opt-in image rotation support.
+    
+    Please be aware that the rotation of images degrades performance by ~15%
+    and currently causes a bug where agents clip into obstacles.
+    """
+
     movement_speed: float = 0.5
     """The per-frame movement speed of the agents."""
 

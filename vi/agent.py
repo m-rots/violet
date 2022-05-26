@@ -31,6 +31,8 @@ class Agent(Sprite):
     _image_index: int
     """The currently selected image."""
 
+    _image_cache: Optional[tuple[int, Surface]] = None
+
     area: Rect
     """The area in which the agent is free to move."""
 
@@ -116,11 +118,29 @@ class Agent(Sprite):
             if not bool(obstacle_hit) and self.area.contains(self.rect):
                 break
 
+    def _get_image(self) -> Surface:
+        image = self._images[self._image_index]
+
+        if self.config.image_rotation:
+            angle = self.move.angle_to(Vector2((0, -1)))
+
+            return pg.transform.rotate(image, angle)
+        else:
+            return image
+
     @property
     def image(self) -> Surface:
         """The image that's used for PyGame's rendering."""
 
-        return self._images[self._image_index]
+        if self._image_cache is not None:
+            frame, image = self._image_cache
+            if frame == self.shared.counter:
+                return image
+
+        new_image = self._get_image()
+        self._image_cache = (self.shared.counter, new_image)
+
+        return new_image
 
     @property
     def rect(self) -> Rect:
