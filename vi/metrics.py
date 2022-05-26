@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from pandas import DataFrame as PandasDataFrame
     from polars import DataFrame as PolarsDataFrame
+    from polars import Series as PolarsSeries
 
 
 @dataclass
@@ -35,10 +36,27 @@ class Snapshot:
 
 
 @dataclass
+class Fps:
+    __fps: list[float] = field(default_factory=list)
+
+    def _push(self, fps: float):
+        self.__fps.append(fps)
+
+    def to_polars(self) -> PolarsSeries:
+        import polars as pl
+
+        return pl.Series("fps", self.__fps)
+
+
+@dataclass
 class Metrics:
-    """A container hosting all the accumulated Snapshots over time."""
+    """A container hosting all the accumulated simulation data over time."""
+
+    fps: Fps = field(default_factory=Fps)
+    """The frames-per-second history to analyse performance."""
 
     snapshots: list[dict[str, Any]] = field(default_factory=list)
+    """The most important data (snapshot) of every agent at every moment in time."""
 
     def to_pandas(self) -> PandasDataFrame:
         import pandas as pd
