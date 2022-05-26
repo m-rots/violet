@@ -305,8 +305,6 @@ class Simulation:
             agent: Agent = sprite  # type: ignore
             agent.update_position()
 
-            agent.rect.center = round_pos(agent.pos)
-
     def __save_snapshots(self):
         """Save a Snapshot of each agent and add it to Metrics."""
 

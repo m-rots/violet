@@ -53,9 +53,9 @@ class Proxyman(Agent):
     # then we want our agent to turn green. Otherwise they stay white.
     def update(self):
         if next((agent for agent in self.in_radius() if agent.id == -1), False):
-            self.image = self.images[1]
+            self.change_image(1)
         else:
-            self.image = self.images[0]
+            self.change_image(0)
 
 
 # Let's increase our agent count for a more interesting simulation!

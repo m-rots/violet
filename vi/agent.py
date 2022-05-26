@@ -25,14 +25,11 @@ class Agent(Sprite):
     id: int
     """The unique identifier of the agent."""
 
-    images: list[Surface]
+    _images: list[Surface]
     """A list of images which you can use to change the current image of the agent."""
 
-    image: Surface
-    """The current image of the agent."""
-
-    rect: Rect
-    """The bounding-box which is used for PyGame's rendering."""
+    _image_index: int
+    """The currently selected image."""
 
     area: Rect
     """The area in which the agent is free to move."""
@@ -48,9 +45,6 @@ class Agent(Sprite):
 
     obstacles: Group
     """The group of obstacles the agent can collide with."""
-
-    mask: Mask
-    """Bit-mask of the image used for collision detection with obstacles and sites."""
 
     # Sites
     sites: Group
@@ -100,8 +94,8 @@ class Agent(Sprite):
         self.__proximity = proximity
 
         # Default to first image in case no image is given
-        self.image = images[0]
-        self.images = images
+        self._image_index = 0
+        self._images = images
 
         self.obstacles = obstacles
         self.sites = sites
@@ -113,10 +107,6 @@ class Agent(Sprite):
         # It could be used to override the initial image if necessary.
         self.on_spawn()
 
-        # Only calculate the rectangle and bitmask when the image is "final"
-        self.rect = self.image.get_rect()
-        self.mask = pg.mask.from_surface(self.image)
-
         # Keep changing the position until the position no longer collides with any obstacle.
         while True:
             self.pos = random_pos(self.area, prng=shared.prng_move)
@@ -125,6 +115,26 @@ class Agent(Sprite):
             obstacle_hit = pg.sprite.spritecollideany(self, self.obstacles, pg.sprite.collide_mask)  # type: ignore
             if not bool(obstacle_hit) and self.area.contains(self.rect):
                 break
+
+    @property
+    def image(self) -> Surface:
+        """The image that's used for PyGame's rendering."""
+
+        return self._images[self._image_index]
+
+    @property
+    def rect(self) -> Rect:
+        """The bounding-box that's used for PyGame's rendering."""
+
+        rect = self.image.get_rect()
+        rect.center = round_pos(self.pos)
+        return rect
+
+    @property
+    def mask(self) -> Mask:
+        """A bit-mask of the image used for collision detection with obstacles and sites."""
+
+        return pg.mask.from_surface(self.image)
 
     def update(self):
         """Run your own agent logic at every tick of the simulation.
@@ -296,6 +306,11 @@ class Agent(Sprite):
             self.move = self.__previous_move
             self.__previous_move = None
 
+    def change_image(self, index: int):
+        """Change the image of the agent."""
+
+        self._image_index = index
+
     def snapshot(self) -> Snapshot:
         """Create a Snapshot of agent data that you're interested in.
 
@@ -315,4 +330,5 @@ class Agent(Sprite):
             y=self.pos.y,
             id=self.id,
             frame=self.shared.counter,
+            image_index=self._image_index,
         )

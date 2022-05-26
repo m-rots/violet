@@ -25,6 +25,9 @@ class Snapshot:
     y: float
     """The y coordinate of the agent."""
 
+    image_index: int
+    """The current index of the image list."""
+
     def as_dict(self) -> dict[str, Any]:
         """Convert this Snapshot into a dictionary."""
 

@@ -14,10 +14,10 @@ class MyAgent(Agent):
     def update(self):
         # If at least one agent is within our agent's radius, then we turn red!
         if len(self.in_radius()) > 0:
-            self.image = self.images[1]
+            self.change_image(index=1)
         else:
             # Otherwise we turn white.
-            self.image = self.images[0]
+            self.change_image(index=0)
 
     def snapshot(self) -> MySnapshot:
         return MySnapshot(
