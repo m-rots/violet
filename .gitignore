@@ -6,3 +6,6 @@ __pycache__
 examples/aggregation.py
 examples/covid.py
 examples/covid.toml
+
+# Ignore exported simulations
+*.parquet
