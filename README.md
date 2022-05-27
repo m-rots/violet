@@ -1,6 +1,15 @@
 # Violet
 
-A minimal simulator framework built on top of PyGame.
+A smol simulator framework built on top of PyGame.
+
+- Automatic agent wandering behaviour
+- Automatic obstacle avoidance
+- DataFrame-powered data analysis
+- Easy and type-safe configuration system
+- Proximity querying
+- Replayable simulations
+
+To learn more, read the [User Guide](https://violet.m-rots.com).
 
 ## Installation
 
