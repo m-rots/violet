@@ -1,38 +1,10 @@
 from __future__ import annotations
 
-import dataclasses
+from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
-if TYPE_CHECKING:
-    from pandas import DataFrame as PandasDataFrame
-    from polars import DataFrame as PolarsDataFrame
-    from polars import Series as PolarsSeries
-
-
-@dataclass
-class Snapshot:
-    """Data that's collected for every agent in every frame of the simulation."""
-
-    frame: int
-    """The current frame of the simulation."""
-
-    id: int
-    """The identifier of the agent."""
-
-    x: float
-    """The x coordinate of the agent."""
-
-    y: float
-    """The y coordinate of the agent."""
-
-    image_index: int
-    """The current index of the image list."""
-
-    def as_dict(self) -> dict[str, Any]:
-        """Convert this Snapshot into a dictionary."""
-
-        return dataclasses.asdict(self)
+import polars as pl
 
 
 @dataclass
@@ -42,28 +14,29 @@ class Fps:
     def _push(self, fps: float):
         self.__fps.append(fps)
 
-    def to_polars(self) -> PolarsSeries:
+    def to_polars(self) -> pl.Series:
         import polars as pl
 
         return pl.Series("fps", self.__fps)
 
 
-@dataclass
 class Metrics:
     """A container hosting all the accumulated simulation data over time."""
 
-    fps: Fps = field(default_factory=Fps)
+    fps: Fps
     """The frames-per-second history to analyse performance."""
 
-    snapshots: list[dict[str, Any]] = field(default_factory=list)
-    """The most important data (snapshot) of every agent at every moment in time."""
+    _temporary_snapshots: defaultdict[str, list[Any]]
+    snapshots: pl.DataFrame
 
-    def to_pandas(self) -> PandasDataFrame:
-        import pandas as pd
+    def __init__(self):
+        self.fps = Fps()
+        self._temporary_snapshots = defaultdict(list)
+        self.snapshots = pl.DataFrame()
 
-        return pd.DataFrame(self.snapshots)
+    def merge(self):
+        df = pl.from_dict(self._temporary_snapshots)
 
-    def to_polars(self) -> PolarsDataFrame:
-        import polars as pl
+        self.snapshots.vstack(df, in_place=True)
 
-        return pl.from_dicts(self.snapshots)
+        self._temporary_snapshots = defaultdict(list)

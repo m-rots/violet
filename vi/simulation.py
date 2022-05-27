@@ -12,7 +12,7 @@ from .config import BaseConfig
 from .metrics import Metrics
 from .obstacle import Obstacle
 from .proximity import ProximityEngine
-from .util import load_image, load_images, round_pos
+from .util import load_image, load_images
 
 if TYPE_CHECKING:
     from .agent import Agent
@@ -148,6 +148,7 @@ class Simulation:
                 proximity=self._proximity,
                 config=self.config,
                 shared=self.shared,
+                metrics=self.__metrics,
             )
 
         return self
@@ -173,6 +174,7 @@ class Simulation:
             proximity=self._proximity,
             config=self.config,
             shared=self.shared,
+            metrics=self.__metrics,
         )
 
         return self
@@ -272,8 +274,8 @@ class Simulation:
         # Update all agents
         self._all.update()
 
-        # Snapshot marked agent data
-        self.__save_snapshots()
+        # Merge the collected snapshots into the dataframe.
+        self.__metrics.merge()
 
         # Draw everything to the screen
         self._all.draw(self._screen)
@@ -306,16 +308,7 @@ class Simulation:
 
         for sprite in self._agents.sprites():
             agent: Agent = sprite  # type: ignore
-            agent.update_position()
-
-    def __save_snapshots(self):
-        """Save a Snapshot of each agent and add it to Metrics."""
-
-        for sprite in self._agents.sprites():
-            agent: Agent = sprite  # type: ignore
-            snapshot = agent.snapshot()
-
-            self.__metrics.snapshots.append(snapshot.as_dict())
+            agent.change_position()
 
     def __visualise_chunks(self):
         """Visualise the proximity chunks by drawing their borders."""

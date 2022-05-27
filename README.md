@@ -1,6 +1,6 @@
 # Violet
 
-A smol simulator framework built on top of PyGame.
+A smol simulator framework built on top of [PyGame](https://www.pygame.org/docs/).
 
 - Automatic agent wandering behaviour
 - Automatic obstacle avoidance

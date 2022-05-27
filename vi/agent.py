@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, TypeVar
+from typing import TYPE_CHECKING, Any, Optional, TypeVar
 
 import pygame as pg
 from pygame.mask import Mask
@@ -10,7 +10,7 @@ from pygame.sprite import Group, Sprite
 from pygame.surface import Surface
 
 from .config import BaseConfig
-from .metrics import Snapshot
+from .metrics import Metrics
 from .util import random_angle, random_pos, round_pos
 
 if TYPE_CHECKING:
@@ -48,11 +48,9 @@ class Agent(Sprite):
     obstacles: Group
     """The group of obstacles the agent can collide with."""
 
-    # Sites
     sites: Group
     """The group of sites on which the agent can appear."""
 
-    # Proximity
     __proximity: ProximityEngine
     """The Proximity Engine used for all proximity-related methods.
     
@@ -60,7 +58,6 @@ class Agent(Sprite):
     Therefore, the Agent class provides the (public) `in_proximity`, `in_close_proximity` and `in_radius` wrapper methods instead.
     """
 
-    # Config (shared with other agents too)
     config: BaseConfig
     """The config of the simulation that's shared with all agents.
     
@@ -74,6 +71,9 @@ class Agent(Sprite):
     shared: Shared
     """Attributes that are shared between the simulation and all agents."""
 
+    __metrics: Metrics
+    """Data collection of the snapshots."""
+
     def __init__(
         self,
         id: int,  # unique identifier used in e.g. proximity calculation and stats engine
@@ -86,12 +86,14 @@ class Agent(Sprite):
         proximity: ProximityEngine,
         config: BaseConfig,
         shared: Shared,
+        metrics: Metrics,
     ):
         Sprite.__init__(self, *containers)
 
         self.id = id
         self.config = config
         self.shared = shared
+        self.__metrics = metrics
 
         self.__proximity = proximity
 
@@ -156,14 +158,18 @@ class Agent(Sprite):
 
         return pg.mask.from_surface(self.image)
 
-    def update(self):
+    def every_frame(self):
         """Run your own agent logic at every tick of the simulation.
-        Every frame of the simulation, this update method is called automatically for every agent of the simulation.
+        Every frame of the simulation, this method is called automatically for every agent of the simulation.
 
         To add your own logic, inherit the `Agent` class and override this method with your own.
         """
 
         ...
+
+    def update(self):
+        self._collect_replay_data()
+        self.every_frame()
 
     def on_spawn(self):
         """Run any code when the agent is spawned into the simulation.
@@ -202,8 +208,8 @@ class Agent(Sprite):
 
         return changed
 
-    def update_position(self):
-        """Update the position of the agent.
+    def change_position(self):
+        """Change the position of the agent.
 
         The agent's new position is calculated as follows:
         1. The agent checks whether it's outside of the visible screen area.
@@ -331,24 +337,42 @@ class Agent(Sprite):
 
         self._image_index = index
 
-    def snapshot(self) -> Snapshot:
-        """Create a Snapshot of agent data that you're interested in.
+    def save_data(self, column: str, value: Any):
+        """Add extra data to the simulation's metrics.
 
-        By default the Agent will produce a Snapshot with the following data:
+        The following data is collected automatically:
         - agent identifier
         - current frame
         - x and y coordinates
 
-        However, you can also add your own data by inheriting the Snapshot dataclass.
-        Add any fields that you like and then overwrite this method to produce your custom Snapshot.
+        Examples
+        --------
 
-        Make sure to call `super().snapshot()` to collect the default Snapshot data.
+        Saving the number of agents in radius:
+
+        >>> from vi import Agent
+        >>> class MyAgent(Agent):
+        ...     def every_frame(self):
+        ...         in_radius = len(self.in_radius())
+        ...         self.save_data("in_radius", in_radius)
         """
 
-        return Snapshot(
-            x=self.pos.x,
-            y=self.pos.y,
-            id=self.id,
-            frame=self.shared.counter,
-            image_index=self._image_index,
-        )
+        self.__metrics._temporary_snapshots[column].append(value)
+
+    def _collect_replay_data(self):
+        """Add the minimum data needed for the replay simulation to the dataframe."""
+
+        x, y = round_pos(self.pos)
+        snapshots = self.__metrics._temporary_snapshots
+
+        snapshots["frame"].append(self.shared.counter)
+        snapshots["id"].append(self.id)
+
+        snapshots["x"].append(x)
+        snapshots["y"].append(y)
+
+        snapshots["image_index"].append(self._image_index)
+
+        if self.config.image_rotation:
+            angle = self.move.angle_to(Vector2((0, -1)))
+            snapshots["angle"].append(round(angle))

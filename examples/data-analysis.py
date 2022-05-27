@@ -1,31 +1,24 @@
 import polars as pl
 
-from vi import Agent, BaseConfig, Simulation, Snapshot, dataclass
-
-
-@dataclass
-class MySnapshot(Snapshot):  # 👈 inherit Snapshot to collect base metrics.
-    # We want to keep track of how many other agents were in our agent's radius,
-    # so we add an extra `in_radius` metric to our Snapshot!
-    in_radius: int
+from vi import Agent, BaseConfig, Simulation
 
 
 class MyAgent(Agent):
-    def update(self):
+    def every_frame(self):
+        # As radius calculation is quite performance heavy,
+        # we only calculate it once per frame.
+        in_radius = len(self.in_radius())
+
+        # We want to keep track of how many other agents were in our agent's radius,
+        # so we add data to the `in_radius` column of our dataframe!
+        self.save_data("in_radius", in_radius)
+
         # If at least one agent is within our agent's radius, then we turn red!
-        if len(self.in_radius()) > 0:
+        if in_radius > 0:
             self.change_image(index=1)
         else:
             # Otherwise we turn white.
             self.change_image(index=0)
-
-    def snapshot(self) -> MySnapshot:
-        return MySnapshot(
-            # Automatically fill-in all the Snapshot attributes such as agent, frame, x and y.
-            **super().snapshot().as_dict(),
-            # Then add our own metric: in_radius!
-            in_radius=len(self.in_radius()),
-        )
 
 
 print(
@@ -39,9 +32,7 @@ print(
         ],
     )
     .run()
-    # convert the output of the simulation into a Polars DataFrame
-    .to_polars()
-    .groupby("frame")
+    .snapshots.groupby("frame")
     # Count the number of agents (per frame) that see at least one other agent (making them red)
     .agg((pl.col("in_radius") > 0).sum().alias("# red agents"))
     .select("# red agents")

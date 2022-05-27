@@ -8,4 +8,5 @@ examples/covid.py
 examples/covid.toml
 
 # Ignore exported simulations
+*.ipc
 *.parquet
