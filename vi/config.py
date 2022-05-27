@@ -1,11 +1,13 @@
 from dataclasses import dataclass, field
 from typing import Optional
 
-from serde import serde
+from serde.de import deserialize
+from serde.se import serialize
 from serde.toml import from_toml
 
 
-@serde
+@deserialize
+@serialize
 @dataclass
 class Window:
     """Settings related to the simulation window."""
@@ -24,20 +26,25 @@ class Window:
         return (self.width, self.height)
 
 
-@serde
+@deserialize
+@serialize
 @dataclass
 class BaseConfig:
-    # Default factories have to be defined first!
-    window: Window = field(default_factory=Window)
-    """The simulation window"""
-
     agent_count: int = 100
     """The number of agents that are spawned when calling `batch_spawn_agents`."""
 
-    duration: Optional[int] = None
+    duration: int = 0
     """The duration of the simulation in frames.
     
-    Defaults to `None`, indicating that the simulation runs indefinitely.
+    Defaults to `0`, indicating that the simulation runs indefinitely.
+    """
+
+    fps_limit: int = 60
+    """Limit the number of frames-per-second.
+    
+    Defaults to 60 fps, equal to most screens' refresh rates.
+
+    Set to `0` to uncap the framerate.
     """
 
     image_rotation: bool = False
@@ -66,6 +73,9 @@ class BaseConfig:
 
     visualise_chunks: bool = False
     """Draw the borders of the proximity-chunks on screen."""
+
+    window: Window = field(default_factory=Window)
+    """The simulation window"""
 
     @classmethod
     def from_file(cls, file_name: str):

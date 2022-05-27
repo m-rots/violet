@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
-from serde import serde
+from serde.de import deserialize
+from serde.se import serialize
 
 from .agent import Agent
 from .config import BaseConfig, Window

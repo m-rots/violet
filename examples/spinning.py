@@ -11,9 +11,9 @@ print(
         BaseConfig(
             agent_count=1500,
             duration=600,
+            fps_limit=0,
             image_rotation=True,
             seed=1,
-            visualise_chunks=True,
         )
     )
     .batch_spawn_agents(Spinning, image_paths=["examples/images/rect.png"])

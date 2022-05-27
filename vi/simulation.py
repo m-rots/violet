@@ -285,7 +285,7 @@ class Simulation:
 
         pg.display.flip()
 
-        self._clock.tick(60)
+        self._clock.tick(self.config.fps_limit)
 
         current_fps = self._clock.get_fps()
         if current_fps > 0:
