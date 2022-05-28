@@ -1,6 +1,6 @@
 import polars as pl
 
-from vi import Agent, BaseConfig, Simulation
+from vi import Agent, Config, Simulation
 
 
 class MyAgent(Agent):
@@ -23,7 +23,7 @@ class MyAgent(Agent):
 
 print(
     # We're using a seed to collect the same data every time.
-    Simulation(BaseConfig(chunk_size=25, duration=300, seed=1))
+    Simulation(Config(chunk_size=25, duration=300, seed=1))
     .batch_spawn_agents(
         MyAgent,  # 👈 use our own MyAgent class.
         image_paths=[

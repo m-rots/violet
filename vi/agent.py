@@ -9,7 +9,7 @@ from pygame.rect import Rect
 from pygame.sprite import Group, Sprite
 from pygame.surface import Surface
 
-from .config import BaseConfig
+from .config import Config
 from .metrics import Metrics
 from .util import random_angle, random_pos, round_pos
 
@@ -58,13 +58,13 @@ class Agent(Sprite):
     Therefore, the Agent class provides the (public) `in_proximity`, `in_close_proximity` and `in_radius` wrapper methods instead.
     """
 
-    config: BaseConfig
+    config: Config
     """The config of the simulation that's shared with all agents.
     
     The config can be overriden when inheriting the Agent class.
     However, the config must always:
 
-    1. Inherit `BaseConfig`
+    1. Inherit `Config`
     2. Be decorated by `@serde`
     """
 
@@ -84,7 +84,7 @@ class Agent(Sprite):
         obstacles: Group,
         sites: Group,
         proximity: ProximityEngine,
-        config: BaseConfig,
+        config: Config,
         shared: Shared,
         metrics: Metrics,
     ):

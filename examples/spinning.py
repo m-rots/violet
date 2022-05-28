@@ -1,4 +1,4 @@
-from vi import Agent, BaseConfig, Simulation
+from vi import Agent, Config, Simulation
 
 
 class Spinning(Agent):
@@ -8,7 +8,7 @@ class Spinning(Agent):
 
 print(
     Simulation(
-        BaseConfig(
+        Config(
             agent_count=1500,
             duration=600,
             fps_limit=0,

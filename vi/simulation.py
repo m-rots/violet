@@ -8,11 +8,10 @@ import pygame as pg
 from pygame.gfxdraw import hline, vline
 from pygame.math import Vector2
 
-from .config import BaseConfig
+from .config import Config
 from .metrics import Metrics
 from .obstacle import Obstacle
 from .proximity import ProximityEngine
-from .util import load_image, load_images
 
 if TYPE_CHECKING:
     from .agent import Agent
@@ -34,7 +33,10 @@ class Shared:
     """A counter that increases each tick of the simulation."""
 
 
-class Simulation:
+T = TypeVar("T", bound="HeadlessSimulation")
+
+
+class HeadlessSimulation:
     """The simulation class provides a snapshot of the current tick of the simulation.
 
     This snapshot includes the state of all agents, obstacles and sites.
@@ -55,9 +57,7 @@ class Simulation:
     _running: bool = False
     """The simulation keeps running as long as running is True."""
 
-    _background: pg.surface.Surface
-    _clock: pg.time.Clock
-    _screen: pg.surface.Surface
+    _area: pg.rect.Rect
 
     # Sprite Groups
     _all: pg.sprite.Group
@@ -69,27 +69,25 @@ class Simulation:
     _proximity: ProximityEngine
 
     # Config that's passed on to agents as well
-    config: BaseConfig
+    config: Config
     """The config of the simulation that's shared with all agents.
     
     The config can be overriden when inheriting the Simulation class.
     However, the config must always:
 
-    1. Inherit `BaseConfig`
+    1. Inherit `Config`
     2. Be decorated by `@serde`
     """
 
-    __metrics: Metrics
+    _metrics: Metrics
     """A collection of all the Snapshots that have been created in the simulation.
     
     Each agent produces a Snapshot at every frame in the simulation.
     """
 
-    def __init__(self, config: Optional[BaseConfig] = None):
-        pg.display.init()
-
-        self.config = config if config else BaseConfig()
-        self.__metrics = Metrics()
+    def __init__(self, config: Optional[Config] = None):
+        self.config = config if config else Config()
+        self._metrics = Metrics()
 
         # Initiate the seed as early as possible.
         random.seed(self.config.seed)
@@ -100,20 +98,8 @@ class Simulation:
 
         self.shared = Shared(prng_move=prng_move)
 
-        self._screen = pg.display.set_mode(self.config.window.as_tuple())
-
-        pg.display.set_caption("Violet")
-
-        # Initialise background
-        self._background = pg.surface.Surface(self._screen.get_size()).convert()
-        self._background.fill((0, 0, 0))
-
-        # Show background immediately (before spawning agents)
-        self._screen.blit(self._background, (0, 0))
-        pg.display.flip()
-
-        # Initialise the clock. Used to cap FPS.
-        self._clock = pg.time.Clock()
+        width, height = self.config.window.as_tuple()
+        self._area = pg.rect.Rect(0, 0, width, height)
 
         # Create sprite groups
         self._all = pg.sprite.Group()
@@ -125,15 +111,15 @@ class Simulation:
         self._proximity = ProximityEngine(self._agents, self.config.chunk_size)
 
     def batch_spawn_agents(
-        self, agent_class: Type[AgentClass], image_paths: list[str]
-    ) -> Simulation:
+        self: T, agent_class: Type[AgentClass], image_paths: list[str]
+    ) -> T:
         """Spawn multiple agents into the simulation.
 
         The number of agents that are spawned can be adjusted by modifying the `agent_count` option in the config.
         """
 
         # Load images once so the files don't have to be read multiple times.
-        images = load_images(image_paths)
+        images = self._load_images(image_paths)
 
         for i in range(self.config.agent_count):
             agent_class(
@@ -142,20 +128,20 @@ class Simulation:
                 movement_speed=self.config.movement_speed,
                 # Load each of the image paths into a blit-optimised Surface
                 images=images,
-                area=self._screen.get_rect(),
+                area=self._area,
                 obstacles=self._obstacles,
                 sites=self._sites,
                 proximity=self._proximity,
                 config=self.config,
                 shared=self.shared,
-                metrics=self.__metrics,
+                metrics=self._metrics,
             )
 
         return self
 
     def spawn_agent(
-        self, agent_class: Type[AgentClass], image_paths: list[str]
-    ) -> Simulation:
+        self: T, agent_class: Type[AgentClass], image_paths: list[str]
+    ) -> T:
         """Spawn one agent into the simulation.
 
         You almost always want to call `batch_spawn_agents` instead.
@@ -167,19 +153,19 @@ class Simulation:
             containers=[self._all, self._agents],
             movement_speed=self.config.movement_speed,
             # Load each of the image paths into a blit-optimised Surface
-            images=load_images(image_paths),
-            area=self._screen.get_rect(),
+            images=self._load_images(image_paths),
+            area=self._area,
             obstacles=self._obstacles,
             sites=self._sites,
             proximity=self._proximity,
             config=self.config,
             shared=self.shared,
-            metrics=self.__metrics,
+            metrics=self._metrics,
         )
 
         return self
 
-    def spawn_obstacle(self, image_path: str, x: int, y: int) -> Simulation:
+    def spawn_obstacle(self: T, image_path: str, x: int, y: int) -> T:
         """Spawn one obstacle into the simulation. The given coordinates will be the centre of the obstacle.
 
         When agents collide with an obstacle, they will make a 180 degree turn.
@@ -187,18 +173,18 @@ class Simulation:
 
         Obstacle(
             containers=[self._all, self._obstacles],
-            image=load_image(image_path),
+            image=self._load_image(image_path),
             pos=Vector2((x, y)),
         )
 
         return self
 
-    def spawn_site(self, image_path: str, x: int, y: int) -> Simulation:
+    def spawn_site(self: T, image_path: str, x: int, y: int) -> T:
         """Spawn one site into the simulation. The given coordinates will be the centre of the site."""
 
         Obstacle(
             containers=[self._all, self._sites],
-            image=load_image(image_path),
+            image=self._load_image(image_path),
             pos=Vector2((x, y)),
         )
 
@@ -212,9 +198,7 @@ class Simulation:
         while self._running:
             self.tick()
 
-        pg.quit()
-
-        return self.__metrics
+        return self._metrics
 
     def before_update(self):
         """Run any code before the agents are updated in every tick.
@@ -225,41 +209,15 @@ class Simulation:
         - Processing events from PyGame's event queue.
         """
 
-        pass
+        ...
+
+    def after_update(self):
+        ...
 
     def tick(self):
         """Advance the simulation with one tick."""
 
-        self.shared.counter += 1
-
-        # If we've reached the duration of the simulation, then stop the simulation.
-        if self.shared.counter == self.config.duration:
-            self.stop()
-
-        rebound = []
-        for event in pg.event.get(eventtype=[pg.QUIT, pg.KEYDOWN]):
-            if event.type == pg.QUIT:
-                self.stop()
-            elif event.type == pg.KEYDOWN:
-                if event.key == pg.K_HOME:
-                    self.config.chunk_size += 5
-                elif event.key == pg.K_END:
-                    self.config.chunk_size -= 5
-                else:
-                    # If a different key was pressed, then we want to re-emit the vent
-                    # so other code can handle it.
-                    rebound.append(event)
-
-        for event in rebound:
-            pg.event.post(event)
-
         self.before_update()
-
-        # Drop all other messages in the event queue
-        pg.event.clear()
-
-        self._all.clear(self._screen, self._background)
-        self._screen.blit(self._background, (0, 0))
 
         # Update the position of all agents
         self.__update_positions()
@@ -275,24 +233,16 @@ class Simulation:
         self._all.update()
 
         # Merge the collected snapshots into the dataframe.
-        self.__metrics.merge()
+        self._metrics.merge()
 
-        # Draw everything to the screen
-        self._all.draw(self._screen)
+        self.after_update()
 
-        if self.config.visualise_chunks:
-            self.__visualise_chunks()
+        # If we've reached the duration of the simulation, then stop the simulation.
+        if self.config.duration > 0 and self.shared.counter == self.config.duration:
+            self.stop()
+            return
 
-        pg.display.flip()
-
-        self._clock.tick(self.config.fps_limit)
-
-        current_fps = self._clock.get_fps()
-        if current_fps > 0:
-            self.__metrics.fps._push(current_fps)
-
-            if self.config.print_fps:
-                print(f"FPS: {current_fps:.1f}")
+        self.shared.counter += 1
 
     def stop(self):
         """Stop the simulation.
@@ -310,6 +260,79 @@ class Simulation:
             agent: Agent = sprite  # type: ignore
             agent.change_position()
 
+    def _load_image(self, path: str) -> pg.surface.Surface:
+        return pg.image.load(path)
+
+    def _load_images(self, image_paths: list[str]) -> list[pg.surface.Surface]:
+        return [self._load_image(path) for path in image_paths]
+
+
+class Simulation(HeadlessSimulation):
+    _background: pg.surface.Surface
+    _clock: pg.time.Clock
+    _screen: pg.surface.Surface
+
+    def __init__(self, config: Optional[Config] = None):
+        super().__init__(config)
+
+        pg.display.init()
+        pg.display.set_caption("Violet")
+
+        size = self.config.window.as_tuple()
+        self._screen = pg.display.set_mode(size)
+
+        # Initialise background
+        self._background = pg.surface.Surface(size).convert()
+        self._background.fill((0, 0, 0))
+
+        # Show background immediately (before spawning agents)
+        self._screen.blit(self._background, (0, 0))
+        pg.display.flip()
+
+        # Initialise the clock. Used to cap FPS.
+        self._clock = pg.time.Clock()
+
+    def before_update(self):
+        rebound = []
+        for event in pg.event.get(eventtype=[pg.QUIT, pg.KEYDOWN]):
+            if event.type == pg.QUIT:
+                self.stop()
+            elif event.type == pg.KEYDOWN:
+                if event.key == pg.K_HOME:
+                    self.config.chunk_size += 5
+                elif event.key == pg.K_END:
+                    self.config.chunk_size -= 5
+                else:
+                    # If a different key was pressed, then we want to re-emit the vent
+                    # so other code can handle it.
+                    rebound.append(event)
+
+        for event in rebound:
+            pg.event.post(event)
+
+        # Clear the screen before the update so agents can draw stuff themselves too!
+        self._all.clear(self._screen, self._background)
+        self._screen.blit(self._background, (0, 0))
+
+    def after_update(self):
+        # Draw everything to the screen
+        self._all.draw(self._screen)
+
+        if self.config.visualise_chunks:
+            self.__visualise_chunks()
+
+        # Update the screen with the new image
+        pg.display.flip()
+
+        self._clock.tick(self.config.fps_limit)
+
+        current_fps = self._clock.get_fps()
+        if current_fps > 0:
+            self._metrics.fps._push(current_fps)
+
+            if self.config.print_fps:
+                print(f"FPS: {current_fps:.1f}")
+
     def __visualise_chunks(self):
         """Visualise the proximity chunks by drawing their borders."""
 
@@ -323,3 +346,6 @@ class Simulation:
 
         for y in range(chunk_size, height, chunk_size):
             hline(self._screen, 0, width, y, colour)
+
+    def _load_image(self, path: str) -> pg.surface.Surface:
+        return super()._load_image(path).convert_alpha()

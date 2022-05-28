@@ -1,37 +1,83 @@
+from copy import deepcopy
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Any, Generic, Optional, Type, TypeVar, Union
 
 from serde.de import deserialize
 from serde.se import serialize
 from serde.toml import from_toml
 
+from .window import Window
+
+
+def embiggen(input_list: list[Any], copies: int):
+    """The in-place deep-copy variant of list multiplication."""
+
+    head = input_list[:]
+
+    for _ in range(copies - 1):
+        input_list.extend(deepcopy(head))
+
+
+def matrixify(matrix: dict[str, Union[Any, list[Any]]]) -> list[dict[str, Any]]:
+    combinations: list[dict[str, Any]] = []
+
+    for key, values in matrix.items():
+        # Skip this key if its value is an empty list
+        if isinstance(values, list) and len(values) == 0:
+            continue
+
+        # Initially the list is empty, so the dicts have to be
+        # manually created on the first iteration.
+        if len(combinations) == 0:
+            # Multiple values
+            if isinstance(values, list):
+                for value in values:
+                    combinations.append({key: value})
+
+            # Single value
+            elif values is not None:
+                combinations.append({key: values})
+
+        # If we have a list of dicts, we can simply add our key!
+        else:
+            # Multiple values
+            if isinstance(values, list):
+                original_length = len(combinations)
+                embiggen(combinations, len(values))
+
+                for index, entry in enumerate(combinations):
+                    value_index = index // original_length
+                    entry[key] = values[value_index]
+
+            # Single value
+            elif values is not None:
+                for entry in combinations:
+                    entry[key] = values
+
+    for index, entry in enumerate(combinations):
+        entry["id"] = index + 1
+
+    return combinations
+
+
+T = TypeVar("T", bound="Config")
+
+MatrixInt = TypeVar("MatrixInt", int, list[int])
+MatrixFloat = TypeVar("MatrixFloat", float, list[float])
+
 
 @deserialize
 @serialize
 @dataclass
-class Window:
-    """Settings related to the simulation window."""
+class Schema(Generic[MatrixInt, MatrixFloat]):
+    id: int = 0
+    """The identifier of the config."""
 
-    width: int = 750
-    """The width of the simulation window in pixels."""
-
-    height: int = 750
-    """The height of the simulation window in pixels."""
-
-    @classmethod
-    def square(cls, size: int):
-        return cls(width=size, height=size)
-
-    def as_tuple(self) -> tuple[int, int]:
-        return (self.width, self.height)
-
-
-@deserialize
-@serialize
-@dataclass
-class BaseConfig:
-    agent_count: int = 100
+    agent_count: Union[int, MatrixInt] = 100
     """The number of agents that are spawned when calling `batch_spawn_agents`."""
+
+    chunk_size: Union[int, MatrixInt] = 50
+    """The size of the proximity chunks in pixels."""
 
     duration: int = 0
     """The duration of the simulation in frames.
@@ -54,22 +100,17 @@ class BaseConfig:
     and currently causes a bug where agents clip into obstacles.
     """
 
-    movement_speed: float = 0.5
+    movement_speed: Union[float, MatrixFloat] = 0.5
     """The per-frame movement speed of the agents."""
 
-    seed: Optional[int] = None
+    print_fps: bool = False
+    """Print the current number of frames-per-second in the terminal"""
+
+    seed: Optional[Union[int, MatrixInt]] = None
     """The PRNG seed to use for the simulation.
     
     Defaults to `None`, indicating that no seed is used.
     """
-
-    # Stdout
-    print_fps: bool = False
-    """Print the current number of frames-per-second in the terminal"""
-
-    # Proximity chunks
-    chunk_size: int = 50
-    """The size of the proximity chunks in pixels."""
 
     visualise_chunks: bool = False
     """Draw the borders of the proximity-chunks on screen."""
@@ -83,3 +124,20 @@ class BaseConfig:
 
         with open(file_name, "r") as f:
             return from_toml(cls, f.read())
+
+
+@deserialize
+@serialize
+@dataclass
+class Matrix(Schema[list[int], list[float]]):
+    def to_configs(self, config: Type[T]) -> list[T]:
+        """Generate a config for every unique combination of values in the matrix."""
+
+        return [config(**values) for values in matrixify(vars(self))]
+
+
+@deserialize
+@serialize
+@dataclass
+class Config(Schema[int, float]):
+    ...

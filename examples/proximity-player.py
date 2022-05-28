@@ -3,14 +3,14 @@ from math import floor
 import pygame as pg
 from pygame.gfxdraw import circle, rectangle
 
-from vi import Agent, BaseConfig, Simulation, Window
+from vi import Agent, Config, Simulation, Window
 
 
 class Player(Agent):
     # Our human-controllable player shouldn't inherit the Agent's default wandering movement.
-    # Therefore, we override the `update_position` method with our own,
+    # Therefore, we override the `change_position` method with our own,
     # where we check which key is pressed to move in that direction.
-    def update_position(self):
+    def change_position(self):
         keys = pg.key.get_pressed()
         if keys[pg.K_DOWN] or keys[pg.K_s]:
             self.pos.y += 2
@@ -23,7 +23,7 @@ class Player(Agent):
 
     # While we don't have to add additional logic for the behaviour of our Player,
     # we do want to visualise the `radius` of who our Player can see.
-    def update(self):
+    def every_frame(self):
         screen = pg.display.get_surface()
         chunk_size = self.config.chunk_size
 
@@ -51,7 +51,7 @@ class Proxyman(Agent):
     # We want the non-player agents to indicate whether they see our Player.
     # So when the agent with id -1 (our player) is in the set of agents that are in proximity,
     # then we want our agent to turn green. Otherwise they stay white.
-    def update(self):
+    def every_frame(self):
         if next((agent for agent in self.in_radius() if agent.id == -1), False):
             self.change_image(1)
         else:
@@ -60,7 +60,7 @@ class Proxyman(Agent):
 
 # Let's increase our agent count for a more interesting simulation!
 # In addition, we ask the framework to visualise the borders of the chunks.
-config = BaseConfig(
+config = Config(
     agent_count=1000,
     chunk_size=25,
     visualise_chunks=True,

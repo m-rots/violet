@@ -1,10 +1,8 @@
 import random
 from typing import Optional
 
-import pygame as pg
 from pygame.math import Vector2
 from pygame.rect import Rect
-from pygame.surface import Surface
 
 
 def probability(threshold: float, prng: Optional[random.Random] = None) -> bool:
@@ -23,18 +21,6 @@ def round_pos(pos: Vector2) -> tuple[int, int]:
     """Round the x and y coordinates of a vector to two integers respectively."""
 
     return round(pos.x), round(pos.y)
-
-
-def load_image(image_path: str) -> Surface:
-    """Load one image path into a PyGame Surface."""
-
-    return pg.image.load(image_path).convert_alpha()
-
-
-def load_images(image_paths: list[str]) -> list[Surface]:
-    """Load multiple image paths into a list of PyGame Surfaces."""
-
-    return list(map(load_image, image_paths))
 
 
 def random_angle(lenght: float, prng: Optional[random.Random] = None) -> Vector2:

@@ -10,3 +10,4 @@ examples/covid.toml
 # Ignore exported simulations
 *.ipc
 *.parquet
+*.png
