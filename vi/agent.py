@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from copy import copy
 from typing import TYPE_CHECKING, Any, Optional, TypeVar
 
 import pygame as pg
@@ -10,12 +11,11 @@ from pygame.sprite import Group, Sprite
 from pygame.surface import Surface
 
 from .config import Config
-from .metrics import Metrics
-from .util import random_angle, random_pos, round_pos
+from .proximity import ProximityIter
+from .util import Images, random_angle, random_pos, round_pos
 
 if TYPE_CHECKING:
-    from .proximity import ProximityEngine
-    from .simulation import Shared
+    from .simulation import HeadlessSimulation, Shared
 
 
 T = TypeVar("T", bound="Agent")
@@ -25,7 +25,7 @@ class Agent(Sprite):
     id: int
     """The unique identifier of the agent."""
 
-    _images: list[Surface]
+    _images: Images
     """A list of images which you can use to change the current image of the agent."""
 
     _image_index: int
@@ -51,13 +51,6 @@ class Agent(Sprite):
     sites: Group
     """The group of sites on which the agent can appear."""
 
-    __proximity: ProximityEngine
-    """The Proximity Engine used for all proximity-related methods.
-    
-    The proximity engine is private (double underscore prefix) as one could retrieve all agents with it.
-    Therefore, the Agent class provides the (public) `in_proximity`, `in_close_proximity` and `in_radius` wrapper methods instead.
-    """
-
     config: Config
     """The config of the simulation that's shared with all agents.
     
@@ -71,57 +64,54 @@ class Agent(Sprite):
     shared: Shared
     """Attributes that are shared between the simulation and all agents."""
 
-    __metrics: Metrics
-    """Data collection of the snapshots."""
+    __simulation: HeadlessSimulation
 
     def __init__(
         self,
-        id: int,  # unique identifier used in e.g. proximity calculation and stats engine
-        containers: list[Group],  # sprite groups for rendering
-        movement_speed: float,
-        images: list[Surface],
-        area: Rect,
-        obstacles: Group,
-        sites: Group,
-        proximity: ProximityEngine,
-        config: Config,
-        shared: Shared,
-        metrics: Metrics,
+        images: Images,
+        simulation: HeadlessSimulation,
+        pos: Optional[Vector2] = None,
+        move: Optional[Vector2] = None,
     ):
-        Sprite.__init__(self, *containers)
+        Sprite.__init__(self, simulation._all, simulation._agents)
 
-        self.id = id
-        self.config = config
-        self.shared = shared
-        self.__metrics = metrics
+        self.__simulation = simulation
 
-        self.__proximity = proximity
+        self.id = simulation._agent_id()
+        self.config = simulation.config
+        self.shared = simulation.shared
 
         # Default to first image in case no image is given
         self._image_index = 0
         self._images = images
 
-        self.obstacles = obstacles
-        self.sites = sites
+        self.obstacles = simulation._obstacles
+        self.sites = simulation._sites
 
-        self.area = area
-        self.move = random_angle(movement_speed, prng=shared.prng_move)
+        self.area = simulation._area
+        self.move = (
+            move
+            if move is not None
+            else random_angle(self.config.movement_speed, prng=self.shared.prng_move)
+        )
 
         # On spawn acts like the __init__ for non-pygame facing state.
         # It could be used to override the initial image if necessary.
         self.on_spawn()
 
-        # Keep changing the position until the position no longer collides with any obstacle.
-        while True:
-            self.pos = random_pos(self.area, prng=shared.prng_move)
-            self.rect.center = round_pos(self.pos)
+        if pos is not None:
+            self.pos = pos
+        else:
+            # Keep changing the position until the position no longer collides with any obstacle.
+            while True:
+                self.pos = random_pos(self.area, prng=self.shared.prng_move)
 
-            obstacle_hit = pg.sprite.spritecollideany(self, self.obstacles, pg.sprite.collide_mask)  # type: ignore
-            if not bool(obstacle_hit) and self.area.contains(self.rect):
-                break
+                obstacle_hit = pg.sprite.spritecollideany(self, self.obstacles, pg.sprite.collide_mask)  # type: ignore
+                if not bool(obstacle_hit) and self.area.contains(self.rect):
+                    break
 
     def _get_image(self) -> Surface:
-        image = self._images[self._image_index]
+        image = self._images.get(self._image_index)
 
         if self.config.image_rotation:
             angle = self.move.angle_to(Vector2((0, -1)))
@@ -150,6 +140,7 @@ class Agent(Sprite):
 
         rect = self.image.get_rect()
         rect.center = round_pos(self.pos)
+
         return rect
 
     @property
@@ -158,7 +149,7 @@ class Agent(Sprite):
 
         return pg.mask.from_surface(self.image)
 
-    def every_frame(self):
+    def update(self):
         """Run your own agent logic at every tick of the simulation.
         Every frame of the simulation, this method is called automatically for every agent of the simulation.
 
@@ -166,10 +157,6 @@ class Agent(Sprite):
         """
 
         ...
-
-    def update(self):
-        self._collect_replay_data()
-        self.every_frame()
 
     def on_spawn(self):
         """Run any code when the agent is spawned into the simulation.
@@ -251,7 +238,7 @@ class Agent(Sprite):
         self.pos += self.move
 
     # TODO: rename method to better convey that only agents in the same chunk are returned.
-    def in_proximity(self: T) -> set[T]:
+    def in_proximity(self: T) -> ProximityIter[T]:
         """Retrieve other agents that are in the same chunk as the current agent.
 
         Tweaking the effective proximity radius can be done by modifying the `chunk-size` option in the config.
@@ -266,9 +253,10 @@ class Agent(Sprite):
         2. `in_close_proximity`: agents in the same chunk, as well as neighbouring chunks, are returned.
         3. `in_radius`: agents within a radius are returned (most accurate but also very slow).
         """
-        return self.__proximity.in_same_chunk(self)
 
-    def in_close_proximity(self: T) -> set[T]:
+        return self.__simulation._proximity.in_same_chunk(self)
+
+    def in_close_proximity(self: T) -> ProximityIter[T]:
         """Retrieve other agents that are in proximity of the current agent.
 
         Agent proximity is determined by retrieving the chunk the agent is currently in,
@@ -288,9 +276,10 @@ class Agent(Sprite):
         2. `in_close_proximity`: agents in the same chunk, as well as neighbouring chunks, are returned.
         3. `in_radius`: agents within a radius are returned (most accurate but also very slow).
         """
-        return self.__proximity.in_surrounding_chunks(self)
 
-    def in_radius(self: T) -> set[T]:
+        return self.__simulation._proximity.in_surrounding_chunks(self)
+
+    def in_radius(self: T) -> ProximityIter[T]:
         """Retrieve other agents that are in a radius of the current agent.
 
         The exact radius can be configured by adjusting the `chunk-size` option in the config.
@@ -306,10 +295,13 @@ class Agent(Sprite):
         2. `in_close_proximity`: agents in the same chunk, as well as neighbouring chunks, are returned.
         3. `in_radius`: agents within a radius are returned (most accurate but also very slow).
         """
-        return set(
+
+        chunk_size = self.__simulation._proximity.chunk_size
+
+        return ProximityIter(
             agent
             for agent in self.in_close_proximity()
-            if agent.pos.distance_to(self.pos) <= self.__proximity.chunk_size
+            if agent.pos.distance_to(self.pos) <= chunk_size
         )
 
     def on_site(self) -> bool:
@@ -357,13 +349,13 @@ class Agent(Sprite):
         ...         self.save_data("in_radius", in_radius)
         """
 
-        self.__metrics._temporary_snapshots[column].append(value)
+        self.__simulation._metrics._temporary_snapshots[column].append(value)
 
     def _collect_replay_data(self):
         """Add the minimum data needed for the replay simulation to the dataframe."""
 
         x, y = round_pos(self.pos)
-        snapshots = self.__metrics._temporary_snapshots
+        snapshots = self.__simulation._metrics._temporary_snapshots
 
         snapshots["frame"].append(self.shared.counter)
         snapshots["id"].append(self.id)
@@ -376,3 +368,42 @@ class Agent(Sprite):
         if self.config.image_rotation:
             angle = self.move.angle_to(Vector2((0, -1)))
             snapshots["angle"].append(round(angle))
+
+    def __copy__(self):
+        """Create a copy of this agent and spawn it into the simulation.
+
+        Note that this only copies the `pos` and `move` vectors.
+        Any other attributes will be set to their defaults.
+        """
+
+        cls = self.__class__
+        agent = cls(self._images, self.__simulation)
+
+        # We want to make sure to copy the position and movement vectors.
+        # Otherwise, the original as well as the clone will continue sharing these vectors.
+        agent.pos = self.pos.copy()
+        agent.move = self.move.copy()
+
+        return agent
+
+    def reproduce(self):
+        """Create a new agent and spawn it into the simulation.
+
+        All values will be reset to their defaults,
+        except for the agent's position and movement vector.
+        These will be cloned from the original agent.
+        """
+
+        return copy(self)
+
+    def is_dead(self) -> bool:
+        """Is the agent dead?
+
+        Death occurs when `kill` is called.
+        """
+        return self.groups() == 0
+
+    def is_alive(self) -> bool:
+        """Is the agent still alive?"""
+
+        return not self.is_dead()

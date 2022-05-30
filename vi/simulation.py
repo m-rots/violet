@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import random
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional, Type, TypeVar
+from typing import TYPE_CHECKING, Optional, Type, TypeVar, Union
 
 import pygame as pg
 from pygame.gfxdraw import hline, vline
@@ -12,6 +12,7 @@ from .config import Config
 from .metrics import Metrics
 from .obstacle import Obstacle
 from .proximity import ProximityEngine
+from .util import Images
 
 if TYPE_CHECKING:
     from .agent import Agent
@@ -65,6 +66,9 @@ class HeadlessSimulation:
     _obstacles: pg.sprite.Group
     _sites: pg.sprite.Group
 
+    _next_agent_id: int = 0
+    """The agent identifier to be given next."""
+
     # Proximity
     _proximity: ProximityEngine
 
@@ -111,7 +115,10 @@ class HeadlessSimulation:
         self._proximity = ProximityEngine(self._agents, self.config.chunk_size)
 
     def batch_spawn_agents(
-        self: T, agent_class: Type[AgentClass], image_paths: list[str]
+        self: T,
+        count: int,
+        agent_class: Type[AgentClass],
+        images: Union[list[str], Images],
     ) -> T:
         """Spawn multiple agents into the simulation.
 
@@ -119,28 +126,17 @@ class HeadlessSimulation:
         """
 
         # Load images once so the files don't have to be read multiple times.
-        images = self._load_images(image_paths)
+        images = self._load_images(images)
 
-        for i in range(self.config.agent_count):
-            agent_class(
-                id=i,
-                containers=[self._all, self._agents],
-                movement_speed=self.config.movement_speed,
-                # Load each of the image paths into a blit-optimised Surface
-                images=images,
-                area=self._area,
-                obstacles=self._obstacles,
-                sites=self._sites,
-                proximity=self._proximity,
-                config=self.config,
-                shared=self.shared,
-                metrics=self._metrics,
-            )
+        for _ in range(count):
+            agent_class(images=images, simulation=self)
 
         return self
 
     def spawn_agent(
-        self: T, agent_class: Type[AgentClass], image_paths: list[str]
+        self: T,
+        agent_class: Type[AgentClass],
+        images: Union[list[str], Images],
     ) -> T:
         """Spawn one agent into the simulation.
 
@@ -148,20 +144,7 @@ class HeadlessSimulation:
         This method should only be used to create a human-controllable player.
         """
 
-        agent_class(
-            id=-1,
-            containers=[self._all, self._agents],
-            movement_speed=self.config.movement_speed,
-            # Load each of the image paths into a blit-optimised Surface
-            images=self._load_images(image_paths),
-            area=self._area,
-            obstacles=self._obstacles,
-            sites=self._sites,
-            proximity=self._proximity,
-            config=self.config,
-            shared=self.shared,
-            metrics=self._metrics,
-        )
+        agent_class(images=self._load_images(images), simulation=self)
 
         return self
 
@@ -229,6 +212,9 @@ class HeadlessSimulation:
         # Calculate proximity chunks
         self._proximity.update()
 
+        # Save the replay data of all agents
+        self.__collect_replay_data()
+
         # Update all agents
         self._all.update()
 
@@ -253,6 +239,13 @@ class HeadlessSimulation:
 
         self._running = False
 
+    def __collect_replay_data(self):
+        """Collect the replay data for all agents."""
+
+        for sprite in self._agents:
+            agent: Agent = sprite  # type: ignore
+            agent._collect_replay_data()
+
     def __update_positions(self):
         """Update the position of all agents."""
 
@@ -263,8 +256,17 @@ class HeadlessSimulation:
     def _load_image(self, path: str) -> pg.surface.Surface:
         return pg.image.load(path)
 
-    def _load_images(self, image_paths: list[str]) -> list[pg.surface.Surface]:
-        return [self._load_image(path) for path in image_paths]
+    def _load_images(self, images: Union[list[str], Images]) -> Images:
+        if isinstance(images, Images):
+            return images
+        else:
+            return Images([self._load_image(path) for path in images])
+
+    def _agent_id(self) -> int:
+        agent_id = self._next_agent_id
+        self._next_agent_id += 1
+
+        return agent_id
 
 
 class Simulation(HeadlessSimulation):

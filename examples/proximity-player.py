@@ -23,7 +23,7 @@ class Player(Agent):
 
     # While we don't have to add additional logic for the behaviour of our Player,
     # we do want to visualise the `radius` of who our Player can see.
-    def every_frame(self):
+    def update(self):
         screen = pg.display.get_surface()
         chunk_size = self.config.chunk_size
 
@@ -49,19 +49,19 @@ class Player(Agent):
 
 class Proxyman(Agent):
     # We want the non-player agents to indicate whether they see our Player.
-    # So when the agent with id -1 (our player) is in the set of agents that are in proximity,
+    # So when we see that a Player is in the set of agents that are in proximity,
     # then we want our agent to turn green. Otherwise they stay white.
-    def every_frame(self):
-        if next((agent for agent in self.in_radius() if agent.id == -1), False):
+    def update(self):
+        player = self.in_radius().filter_kind(Player).first()
+
+        if player is not None:
             self.change_image(1)
         else:
             self.change_image(0)
 
 
-# Let's increase our agent count for a more interesting simulation!
-# In addition, we ask the framework to visualise the borders of the chunks.
+# We ask the framework to visualise the borders of the chunks.
 config = Config(
-    agent_count=1000,
     chunk_size=25,
     visualise_chunks=True,
     window=Window.square(500),
@@ -69,14 +69,14 @@ config = Config(
 
 (
     Simulation(config)
+    .spawn_agent(Player, images=["examples/images/red.png"])
     .batch_spawn_agents(
+        1000,
         Proxyman,
-        image_paths=[
+        images=[
             "examples/images/white.png",
             "examples/images/green.png",
         ],
     )
-    # Spawn agent automatically assigns id -1 to our Player.
-    .spawn_agent(Player, image_paths=["examples/images/red.png"])
     .run()
 )

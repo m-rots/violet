@@ -73,9 +73,6 @@ class Schema(Generic[MatrixInt, MatrixFloat]):
     id: int = 0
     """The identifier of the config."""
 
-    agent_count: Union[int, MatrixInt] = 100
-    """The number of agents that are spawned when calling `batch_spawn_agents`."""
-
     chunk_size: Union[int, MatrixInt] = 50
     """The size of the proximity chunks in pixels."""
 

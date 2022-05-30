@@ -4,10 +4,10 @@ from vi import Agent, Config, Simulation
 
 
 class MyAgent(Agent):
-    def every_frame(self):
+    def update(self):
         # As radius calculation is quite performance heavy,
         # we only calculate it once per frame.
-        in_radius = len(self.in_radius())
+        in_radius = self.in_radius().count()
 
         # We want to keep track of how many other agents were in our agent's radius,
         # so we add data to the `in_radius` column of our dataframe!
@@ -25,8 +25,9 @@ print(
     # We're using a seed to collect the same data every time.
     Simulation(Config(chunk_size=25, duration=300, seed=1))
     .batch_spawn_agents(
+        1000,
         MyAgent,  # 👈 use our own MyAgent class.
-        image_paths=[
+        images=[
             "examples/images/white.png",
             "examples/images/red.png",
         ],

@@ -1,8 +1,18 @@
 import random
+from dataclasses import dataclass
 from typing import Optional
 
 from pygame.math import Vector2
 from pygame.rect import Rect
+from pygame.surface import Surface
+
+
+@dataclass
+class Images:
+    _images: list[Surface]
+
+    def get(self, index: int) -> Surface:
+        return self._images[index]
 
 
 def probability(threshold: float, prng: Optional[random.Random] = None) -> bool:

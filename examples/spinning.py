@@ -7,16 +7,8 @@ class Spinning(Agent):
 
 
 print(
-    Simulation(
-        Config(
-            agent_count=1500,
-            duration=600,
-            fps_limit=0,
-            image_rotation=True,
-            seed=1,
-        )
-    )
-    .batch_spawn_agents(Spinning, image_paths=["examples/images/rect.png"])
+    Simulation(Config(duration=600, fps_limit=0, image_rotation=True, seed=1))
+    .batch_spawn_agents(1500, Spinning, images=["examples/images/rect.png"])
     .run()
     .fps.to_polars()
     .describe()
