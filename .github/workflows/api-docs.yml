@@ -24,4 +24,4 @@ jobs:
         uses: cloudflare/wrangler-action@2.0.0
         with:
           apiToken: ${{ secrets.CF_API_TOKEN }}
-          command: pages publish --project-name=violet-api
+          command: pages publish public --project-name=violet-api
