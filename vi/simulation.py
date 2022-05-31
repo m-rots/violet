@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import random
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional, Type, TypeVar, Union
+from typing import TYPE_CHECKING, Optional, Type, TypeVar
 
 import pygame as pg
 from pygame.gfxdraw import hline, vline
@@ -12,7 +12,6 @@ from .config import Config
 from .metrics import Metrics
 from .obstacle import Obstacle
 from .proximity import ProximityEngine
-from .util import Images
 
 if TYPE_CHECKING:
     from .agent import Agent
@@ -118,7 +117,7 @@ class HeadlessSimulation:
         self: T,
         count: int,
         agent_class: Type[AgentClass],
-        images: Union[list[str], Images],
+        images: list[str],
     ) -> T:
         """Spawn multiple agents into the simulation.
 
@@ -126,17 +125,17 @@ class HeadlessSimulation:
         """
 
         # Load images once so the files don't have to be read multiple times.
-        images = self._load_images(images)
+        loaded_images = self._load_images(images)
 
         for _ in range(count):
-            agent_class(images=images, simulation=self)
+            agent_class(images=loaded_images, simulation=self)
 
         return self
 
     def spawn_agent(
         self: T,
         agent_class: Type[AgentClass],
-        images: Union[list[str], Images],
+        images: list[str],
     ) -> T:
         """Spawn one agent into the simulation.
 
@@ -256,11 +255,8 @@ class HeadlessSimulation:
     def _load_image(self, path: str) -> pg.surface.Surface:
         return pg.image.load(path)
 
-    def _load_images(self, images: Union[list[str], Images]) -> Images:
-        if isinstance(images, Images):
-            return images
-        else:
-            return Images([self._load_image(path) for path in images])
+    def _load_images(self, images: list[str]) -> list[pg.surface.Surface]:
+        return [self._load_image(path) for path in images]
 
     def _agent_id(self) -> int:
         agent_id = self._next_agent_id

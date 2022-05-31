@@ -12,7 +12,7 @@ from pygame.surface import Surface
 
 from .config import Config
 from .proximity import ProximityIter
-from .util import Images, random_angle, random_pos, round_pos
+from .util import random_angle, random_pos, round_pos
 
 if TYPE_CHECKING:
     from .simulation import HeadlessSimulation, Shared
@@ -25,7 +25,7 @@ class Agent(Sprite):
     id: int
     """The unique identifier of the agent."""
 
-    _images: Images
+    _images: list[Surface]
     """A list of images which you can use to change the current image of the agent."""
 
     _image_index: int
@@ -68,7 +68,7 @@ class Agent(Sprite):
 
     def __init__(
         self,
-        images: Images,
+        images: list[Surface],
         simulation: HeadlessSimulation,
         pos: Optional[Vector2] = None,
         move: Optional[Vector2] = None,
@@ -111,7 +111,7 @@ class Agent(Sprite):
                     break
 
     def _get_image(self) -> Surface:
-        image = self._images.get(self._image_index)
+        image = self._images[self._image_index]
 
         if self.config.image_rotation:
             angle = self.move.angle_to(Vector2((0, -1)))
