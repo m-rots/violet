@@ -6,7 +6,7 @@ authors = ["Storm Timmermans <stormtimmermans@icloud.com>"]
 repository = "https://github.com/m-rots/violet"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = ">=3.9, <3.11"
 pygame = "^2.1.2"
 pyserde = { extras = ["toml"], version = "^0.7.3" }
 polars = "^0.13.38"
@@ -14,6 +14,8 @@ polars = "^0.13.38"
 [tool.poetry.dev-dependencies]
 black = "^22.3.0"
 isort = "^5.10.1"
+seaborn = "^0.11.2"
+pdoc = "^12.0.0"
 
 [tool.isort]
 profile = "black"
