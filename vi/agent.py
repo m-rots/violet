@@ -101,7 +101,8 @@ class Agent(Sprite):
 
         if pos is not None:
             self.pos = pos
-        else:
+
+        if not hasattr(self, "pos"):
             # Keep changing the position until the position no longer collides with any obstacle.
             while True:
                 self.pos = random_pos(self.area, prng=self.shared.prng_move)
@@ -135,11 +136,15 @@ class Agent(Sprite):
         return new_image
 
     @property
+    def center(self) -> tuple[int, int]:
+        return round_pos(self.pos)
+
+    @property
     def rect(self) -> Rect:
         """The bounding-box that's used for PyGame's rendering."""
 
         rect = self.image.get_rect()
-        rect.center = round_pos(self.pos)
+        rect.center = self.center
 
         return rect
 
@@ -237,72 +242,35 @@ class Agent(Sprite):
         # Actually update the position at last.
         self.pos += self.move
 
-    # TODO: rename method to better convey that only agents in the same chunk are returned.
-    def in_proximity(self: T) -> ProximityIter[T]:
-        """Retrieve other agents that are in the same chunk as the current agent.
+    def in_proximity_performance(self: T) -> ProximityIter[T]:
+        """Retrieve other agents that are in the `vi.config.Schema.radius` of the current agent.
 
-        Tweaking the effective proximity radius can be done by modifying the `chunk-size` option in the config.
+        Unlike `in_proximity_accuracy`, this proximity method does not calculate the distances between agents.
+        Instead, it retrieves agents that are in the same chunk as the current agent,
+        irrespective of their position within the chunk.
 
-        This proximity method is quite inaccurate and should not be used.
-        Instead, the use of `in_close_proximity` is strongly preferred as it has the same performance characteristics,
-        but significantly improves the accuracy.
-
-        `in_proximity` is one of three methods to retrieve neighbouring agents:
-
-        1. `in_proximity`: agents in the same chunk are returned.
-        2. `in_close_proximity`: agents in the same chunk, as well as neighbouring chunks, are returned.
-        3. `in_radius`: agents within a radius are returned (most accurate but also very slow).
+        If you find yourself limited by the performance of `in_proximity_accuracy`,
+        you can swap the function call for this one instead.
+        This performance method roughly doubles the frame rates of the simulation.
         """
 
-        return self.__simulation._proximity.in_same_chunk(self)
+        return self.__simulation._proximity.in_proximity_performance(self)
 
-    def in_close_proximity(self: T) -> ProximityIter[T]:
-        """Retrieve other agents that are in proximity of the current agent.
+    def in_proximity_accuracy(self: T) -> ProximityIter[T]:
+        """Retrieve other agents that are in the `vi.config.Schema.radius` of the current agent.
 
-        Agent proximity is determined by retrieving the chunk the agent is currently in,
-        as well as 8 neighbouring chunks, to retrieve a total of 9 chunks.
-        All agents, other than the current agent, that appear in these chunks are considered to be in proximity.
+        This proximity method calculates the distances between agents to determine whether
+        an agent is in the radius of the current agent.
 
-        This proximity method is strongly preferred over `in_proximity` as it better accounts for cases where two agents
-        are perhaps one pixel apart, but both are in a different chunk.
-        By also retrieving the neighbouring pixels, the accuracy is improved considerably.
+        To calculate the distances between agents, up to four chunks have to be retrieved from the Proximity Engine.
+        These extra lookups, in combination with the vector distance calculation, have a noticable impact on performance.
+        Note however that this performance impact is only noticable with >1000 agents.
 
-        Tweaking the effective proximity radius can be done by modifying the `chunk-size` option in the config.
-        Note that this proximity method retrieves 3x the chunk-size, so adjust the chunk size accordingly.
-
-        `in_close_proximity` is one of three methods to retrieve neighbouring agents:
-
-        1. `in_proximity`: agents in the same chunk are returned.
-        2. `in_close_proximity`: agents in the same chunk, as well as neighbouring chunks, are returned.
-        3. `in_radius`: agents within a radius are returned (most accurate but also very slow).
+        If you want to speed up your simulation at the cost of some accuracy,
+        consider using the `in_proximity_performance` method instead.
         """
 
-        return self.__simulation._proximity.in_surrounding_chunks(self)
-
-    def in_radius(self: T) -> ProximityIter[T]:
-        """Retrieve other agents that are in a radius of the current agent.
-
-        The exact radius can be configured by adjusting the `chunk-size` option in the config.
-
-        This proximity method is 100% accurate as it calculates the exact distance between
-        the current agent and other agents that are in close proximity.
-        However, this distance calculation comes with quite the performance cost.
-        So if you do not need an exact radius, strongly consider using `in_close_proximity` instead.
-
-        `in_radius` is one of three methods to retrieve neighbouring agents:
-
-        1. `in_proximity`: agents in the same chunk are returned.
-        2. `in_close_proximity`: agents in the same chunk, as well as neighbouring chunks, are returned.
-        3. `in_radius`: agents within a radius are returned (most accurate but also very slow).
-        """
-
-        chunk_size = self.__simulation._proximity.chunk_size
-
-        return ProximityIter(
-            agent
-            for agent in self.in_close_proximity()
-            if agent.pos.distance_to(self.pos) <= chunk_size
-        )
+        return self.__simulation._proximity.in_proximity_accuracy(self)
 
     def on_site(self) -> bool:
         """Check whether the agent is currently on a site."""
@@ -354,7 +322,7 @@ class Agent(Sprite):
     def _collect_replay_data(self):
         """Add the minimum data needed for the replay simulation to the dataframe."""
 
-        x, y = round_pos(self.pos)
+        x, y = self.center
         snapshots = self.__simulation._metrics._temporary_snapshots
 
         snapshots["frame"].append(self.shared.counter)
