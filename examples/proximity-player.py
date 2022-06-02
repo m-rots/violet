@@ -1,7 +1,5 @@
-from math import floor
-
 import pygame as pg
-from pygame.gfxdraw import circle, rectangle
+from pygame.gfxdraw import circle
 
 from vi import Agent, Config, Simulation, Window
 
@@ -25,26 +23,12 @@ class Player(Agent):
     # we do want to visualise the `radius` of who our Player can see.
     def update(self):
         screen = pg.display.get_surface()
-        chunk_size = self.config.chunk_size
+        radius = self.config.radius
+        x, y = self.center
 
-        left = floor(self.pos.x / chunk_size) * chunk_size - chunk_size
-        top = floor(self.pos.y / chunk_size) * chunk_size - chunk_size
-
-        # First we draw a rectangle of which chunks are in-close-proximity of the Player.
-        # As close proximity is a 3x3 grid of chunks, we take 3x the chunk-size as width and height.
-        rect = pg.rect.Rect(left, top, chunk_size * 3, chunk_size * 3)
-        rectangle(screen, rect, (255, 255, 255))
-
-        # Second, we want to draw our player's radius to the screen as well.
         # We can simply draw a circle centred on the player's coordinates
-        # with the chunk-size as radius to do so.
-        circle(
-            screen,
-            round(self.pos.x),
-            round(self.pos.y),
-            self.config.chunk_size,
-            (255, 255, 255),
-        )
+        # with our config's radius value to visualise the player's proximity view.
+        circle(screen, x, y, radius, (255, 255, 255))
 
 
 class Proxyman(Agent):
@@ -52,7 +36,8 @@ class Proxyman(Agent):
     # So when we see that a Player is in the set of agents that are in proximity,
     # then we want our agent to turn green. Otherwise they stay white.
     def update(self):
-        player = self.in_radius().filter_kind(Player).first()
+        player = self.in_proximity_accuracy().filter_kind(Player).first()
+        #                             👆 see what happens if you change it to performance.
 
         if player is not None:
             self.change_image(1)
@@ -62,7 +47,7 @@ class Proxyman(Agent):
 
 # We ask the framework to visualise the borders of the chunks.
 config = Config(
-    chunk_size=25,
+    radius=25,
     visualise_chunks=True,
     window=Window.square(500),
 )

@@ -6,10 +6,8 @@ from serde.de import deserialize
 from serde.se import serialize
 from serde.toml import from_toml
 
-from .window import Window
 
-
-def embiggen(input_list: list[Any], copies: int):
+def _embiggen(input_list: list[Any], copies: int):
     """The in-place deep-copy variant of list multiplication."""
 
     head = input_list[:]
@@ -18,7 +16,7 @@ def embiggen(input_list: list[Any], copies: int):
         input_list.extend(deepcopy(head))
 
 
-def matrixify(matrix: dict[str, Union[Any, list[Any]]]) -> list[dict[str, Any]]:
+def _matrixify(matrix: dict[str, Union[Any, list[Any]]]) -> list[dict[str, Any]]:
     combinations: list[dict[str, Any]] = []
 
     for key, values in matrix.items():
@@ -43,7 +41,7 @@ def matrixify(matrix: dict[str, Union[Any, list[Any]]]) -> list[dict[str, Any]]:
             # Multiple values
             if isinstance(values, list):
                 original_length = len(combinations)
-                embiggen(combinations, len(values))
+                _embiggen(combinations, len(values))
 
                 for index, entry in enumerate(combinations):
                     value_index = index // original_length
@@ -60,6 +58,26 @@ def matrixify(matrix: dict[str, Union[Any, list[Any]]]) -> list[dict[str, Any]]:
     return combinations
 
 
+@deserialize
+@serialize
+@dataclass
+class Window:
+    """Settings related to the simulation window."""
+
+    width: int = 750
+    """The width of the simulation window in pixels."""
+
+    height: int = 750
+    """The height of the simulation window in pixels."""
+
+    @classmethod
+    def square(cls, size: int):
+        return cls(width=size, height=size)
+
+    def as_tuple(self) -> tuple[int, int]:
+        return (self.width, self.height)
+
+
 T = TypeVar("T", bound="Config")
 
 MatrixInt = TypeVar("MatrixInt", int, list[int])
@@ -72,9 +90,6 @@ MatrixFloat = TypeVar("MatrixFloat", float, list[float])
 class Schema(Generic[MatrixInt, MatrixFloat]):
     id: int = 0
     """The identifier of the config."""
-
-    chunk_size: Union[int, MatrixInt] = 50
-    """The size of the proximity chunks in pixels."""
 
     duration: int = 0
     """The duration of the simulation in frames.
@@ -103,6 +118,9 @@ class Schema(Generic[MatrixInt, MatrixFloat]):
     print_fps: bool = False
     """Print the current number of frames-per-second in the terminal"""
 
+    radius: Union[int, MatrixInt] = 25
+    """The radius (in pixels) in which agents are considered to be in proximity."""
+
     seed: Optional[Union[int, MatrixInt]] = None
     """The PRNG seed to use for the simulation.
     
@@ -130,7 +148,7 @@ class Matrix(Schema[list[int], list[float]]):
     def to_configs(self, config: Type[T]) -> list[T]:
         """Generate a config for every unique combination of values in the matrix."""
 
-        return [config(**values) for values in matrixify(vars(self))]
+        return [config(**values) for values in _matrixify(vars(self))]
 
 
 @deserialize
@@ -138,3 +156,6 @@ class Matrix(Schema[list[int], list[float]]):
 @dataclass
 class Config(Schema[int, float]):
     ...
+
+
+__all__ = ["Schema", "Config", "Matrix", "Window"]

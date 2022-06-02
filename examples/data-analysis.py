@@ -5,9 +5,9 @@ from vi import Agent, Config, Simulation
 
 class MyAgent(Agent):
     def update(self):
-        # As radius calculation is quite performance heavy,
+        # As accurate proximity calculation is quite performance heavy,
         # we only calculate it once per frame.
-        in_radius = self.in_radius().count()
+        in_radius = self.in_proximity_accuracy().count()
 
         # We want to keep track of how many other agents were in our agent's radius,
         # so we add data to the `in_radius` column of our dataframe!
@@ -23,7 +23,7 @@ class MyAgent(Agent):
 
 print(
     # We're using a seed to collect the same data every time.
-    Simulation(Config(chunk_size=25, duration=300, seed=1))
+    Simulation(Config(duration=300, radius=10, seed=1))
     .batch_spawn_agents(
         1000,
         MyAgent,  # 👈 use our own MyAgent class.

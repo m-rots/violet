@@ -27,14 +27,16 @@ class Metrics:
     """The frames-per-second history to analyse performance."""
 
     _temporary_snapshots: defaultdict[str, list[Any]]
+
     snapshots: pl.DataFrame
+    """The [Polars DataFrame](https://pola-rs.github.io/polars-book/user-guide/quickstart/intro.html) containing the snapshot data of all agents over time."""
 
     def __init__(self):
         self.fps = Fps()
         self._temporary_snapshots = defaultdict(list)
         self.snapshots = pl.DataFrame()
 
-    def merge(self):
+    def _merge(self):
         df = pl.from_dict(self._temporary_snapshots)
 
         self.snapshots.vstack(df, in_place=True)

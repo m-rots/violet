@@ -111,7 +111,7 @@ class HeadlessSimulation:
         self._sites = pg.sprite.Group()
 
         # Proximity!
-        self._proximity = ProximityEngine(self._agents, self.config.chunk_size)
+        self._proximity = ProximityEngine(self._agents, self.config.radius)
 
     def batch_spawn_agents(
         self: T,
@@ -204,9 +204,9 @@ class HeadlessSimulation:
         # Update the position of all agents
         self.__update_positions()
 
-        # If the chunk-size was changed by an event,
-        # also update the chunk-size in the proximity engine
-        self._proximity.chunk_size = self.config.chunk_size
+        # If the radius was changed by an event,
+        # also update the radius in the proximity engine
+        self._proximity._set_radius(self.config.radius)
 
         # Calculate proximity chunks
         self._proximity.update()
@@ -218,7 +218,7 @@ class HeadlessSimulation:
         self._all.update()
 
         # Merge the collected snapshots into the dataframe.
-        self._metrics.merge()
+        self._metrics._merge()
 
         self.after_update()
 
@@ -297,9 +297,9 @@ class Simulation(HeadlessSimulation):
                 self.stop()
             elif event.type == pg.KEYDOWN:
                 if event.key == pg.K_HOME:
-                    self.config.chunk_size += 5
+                    self.config.radius += 1
                 elif event.key == pg.K_END:
-                    self.config.chunk_size -= 5
+                    self.config.radius -= 1
                 else:
                     # If a different key was pressed, then we want to re-emit the vent
                     # so other code can handle it.
