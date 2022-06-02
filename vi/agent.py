@@ -1,3 +1,9 @@
+"""
+The Agent class is where all the magic happens!
+
+Inheriting the Agent class allows you to modify the behaviour of the agents in the simulation.
+"""
+
 from __future__ import annotations
 
 from copy import copy
@@ -22,8 +28,34 @@ T = TypeVar("T", bound="Agent")
 
 
 class Agent(Sprite):
+    """
+    The `Agent` class is home to Violet's various additions and is
+    built on top of [PyGame's Sprite](https://www.pygame.org/docs/ref/sprite.html) class.
+
+    While you can simply add this `Agent` class to your simulations by calling `batch_spawn_agents`,
+    the agents won't actually do anything interesting.
+    Sure, they'll move around the screen very energetically, but they don't *interact* with each other.
+
+    That's where you come in!
+    By inheriting this `Agent` class you can make use of all its utilities,
+    while also programming the behaviour of your custom agent.
+    """
+
     id: int
     """The unique identifier of the agent."""
+
+    config: Config
+    """The config of the simulation that's shared with all agents.
+    
+    The config can be overriden when inheriting the Agent class.
+    However, the config must always:
+
+    1. Inherit `Config`
+    2. Be decorated by `@deserialize` and `@dataclass`
+    """
+
+    shared: Shared
+    """Attributes that are shared between the simulation and all agents."""
 
     _images: list[Surface]
     """A list of images which you can use to change the current image of the agent."""
@@ -33,11 +65,15 @@ class Agent(Sprite):
 
     _image_cache: Optional[tuple[int, Surface]] = None
 
-    area: Rect
+    _area: Rect
     """The area in which the agent is free to move."""
 
     move: Vector2
-    """The current angle and speed used for the agent's movement."""
+    """The current angle and speed used for the agent's movement.
+    
+    This property is also used to automatically rotate the agent's image
+    when `vi.config.Schema.image_rotation` is enabled.
+    """
 
     pos: Vector2
     """The current (centre) position of the agent."""
@@ -45,26 +81,15 @@ class Agent(Sprite):
     __previous_move: Optional[Vector2] = None
     """The value of the `move` vector before the agent was frozen."""
 
-    obstacles: Group
+    _obstacles: Group
     """The group of obstacles the agent can collide with."""
 
-    sites: Group
+    _sites: Group
     """The group of sites on which the agent can appear."""
 
-    config: Config
-    """The config of the simulation that's shared with all agents.
-    
-    The config can be overriden when inheriting the Agent class.
-    However, the config must always:
-
-    1. Inherit `Config`
-    2. Be decorated by `@serde`
-    """
-
-    shared: Shared
-    """Attributes that are shared between the simulation and all agents."""
-
     __simulation: HeadlessSimulation
+
+    _still_stuck: bool = False
 
     def __init__(
         self,
@@ -85,10 +110,10 @@ class Agent(Sprite):
         self._image_index = 0
         self._images = images
 
-        self.obstacles = simulation._obstacles
-        self.sites = simulation._sites
+        self._obstacles = simulation._obstacles
+        self._sites = simulation._sites
 
-        self.area = simulation._area
+        self._area = simulation._area
         self.move = (
             move
             if move is not None
@@ -105,10 +130,10 @@ class Agent(Sprite):
         if not hasattr(self, "pos"):
             # Keep changing the position until the position no longer collides with any obstacle.
             while True:
-                self.pos = random_pos(self.area, prng=self.shared.prng_move)
+                self.pos = random_pos(self._area, prng=self.shared.prng_move)
 
-                obstacle_hit = pg.sprite.spritecollideany(self, self.obstacles, pg.sprite.collide_mask)  # type: ignore
-                if not bool(obstacle_hit) and self.area.contains(self.rect):
+                obstacle_hit = pg.sprite.spritecollideany(self, self._obstacles, pg.sprite.collide_mask)  # type: ignore
+                if not bool(obstacle_hit) and self._area.contains(self.rect):
                     break
 
     def _get_image(self) -> Surface:
@@ -123,7 +148,7 @@ class Agent(Sprite):
 
     @property
     def image(self) -> Surface:
-        """The image that's used for PyGame's rendering."""
+        """The read-only image that's used for PyGame's rendering."""
 
         if self._image_cache is not None:
             frame, image = self._image_cache
@@ -137,11 +162,13 @@ class Agent(Sprite):
 
     @property
     def center(self) -> tuple[int, int]:
+        """The read-only centre position of the agent."""
+
         return round_pos(self.pos)
 
     @property
     def rect(self) -> Rect:
-        """The bounding-box that's used for PyGame's rendering."""
+        """The read-only bounding-box that's used for PyGame's rendering."""
 
         rect = self.image.get_rect()
         rect.center = self.center
@@ -150,7 +177,7 @@ class Agent(Sprite):
 
     @property
     def mask(self) -> Mask:
-        """A bit-mask of the image used for collision detection with obstacles and sites."""
+        """A read-only bit-mask of the image used for collision detection with obstacles and sites."""
 
         return pg.mask.from_surface(self.image)
 
@@ -178,25 +205,39 @@ class Agent(Sprite):
         ...
 
     def there_is_no_escape(self) -> bool:
-        """Pac-Man-style teleport the agent to the other side of the screen when it is outside of the playable area."""
+        """Pac-Man-style teleport the agent to the other side of the screen when it is outside of the playable area.
+
+        Examples
+        --------
+
+        An agent that will always move to the right, until snapped back to reality.
+
+        >>> class MyAgent(Agent):
+        ...     def on_spawn(self):
+        ...         self.move = Vector2((5, 0))
+        ...
+        ...     def change_position(self):
+        ...         self.there_is_no_escape()
+        ...         self.pos += self.move
+        """
 
         changed = False
 
-        if self.pos.x < self.area.left:
+        if self.pos.x < self._area.left:
             changed = True
-            self.pos.x = self.area.right
+            self.pos.x = self._area.right
 
-        if self.pos.x > self.area.right:
+        if self.pos.x > self._area.right:
             changed = True
-            self.pos.x = self.area.left
+            self.pos.x = self._area.left
 
-        if self.pos.y < self.area.top:
+        if self.pos.y < self._area.top:
             changed = True
-            self.pos.y = self.area.bottom
+            self.pos.y = self._area.bottom
 
-        if self.pos.y > self.area.bottom:
+        if self.pos.y > self._area.bottom:
             changed = True
-            self.pos.y = self.area.top
+            self.pos.y = self._area.top
 
         return changed
 
@@ -221,12 +262,16 @@ class Agent(Sprite):
             self.move.rotate_ip(deg)
 
         # Obstacle Avoidance
-        obstacle_hit = pg.sprite.spritecollideany(self, self.obstacles, pg.sprite.collide_mask)  # type: ignore
+        obstacle_hit = pg.sprite.spritecollideany(self, self._obstacles, pg.sprite.collide_mask)  # type: ignore
         collision = bool(obstacle_hit)
 
         # Reverse direction when colliding with an obstacle.
-        if collision:
+        if collision and not self._still_stuck:
             self.move.rotate_ip(180)
+            self._still_stuck = True
+
+        if not collision:
+            self._still_stuck = False
 
         # Random opportunity to slightly change angle.
         # Probabilities are pre-computed so a seed could be used.
@@ -236,11 +281,58 @@ class Agent(Sprite):
         # Only allow the angle opportunity to take place when no collisions have occured.
         # This is done so an agent always turns 180 degrees. Any small change in the number of degrees
         # allows the agent to possibly escape the obstacle.
-        if not collision and 0.25 > should_change_angle:
+        if not collision and not self._still_stuck and 0.25 > should_change_angle:
             self.move.rotate_ip(deg)
 
         # Actually update the position at last.
         self.pos += self.move
+
+    def in_proximity_accuracy(self: T) -> ProximityIter[T]:
+        """Retrieve other agents that are in the `vi.config.Schema.radius` of the current agent.
+
+        This proximity method calculates the distances between agents to determine whether
+        an agent is in the radius of the current agent.
+
+        To calculate the distances between agents, up to four chunks have to be retrieved from the Proximity Engine.
+        These extra lookups, in combination with the vector distance calculation, have a noticable impact on performance.
+        Note however that this performance impact is only noticable with >1000 agents.
+
+        If you want to speed up your simulation at the cost of some accuracy,
+        consider using the `in_proximity_performance` method instead.
+
+        This function doesn't return the agents as a `list` or as a `set`.
+        Instead, you are given a `vi.proximity.ProximityIter`, a small wrapper around a Python generator.
+
+        Examples
+        --------
+
+        Count the number of agents that are in proximity
+        and change to image `1` if there is at least one agent nearby.
+
+        >>> class MyAgent(Agent):
+        ...     def update(self):
+        ...         in_proximity = self.in_proximity_accuracy().count()
+        ...
+        ...         if in_proximity >= 1:
+        ...             self.change_image(1)
+        ...         else:
+        ...             self.change_image(0)
+
+        Kill the first `Human` agent that's in proximity.
+
+        >>> class Zombie(Agent):
+        ...     def update(self):
+        ...         human = (
+        ...             self.in_proximity_accuracy()
+        ...             .filter_kind(Human) # 👈 don't want to kill other zombies
+        ...             .first() # 👈 can return None if no humans are around
+        ...         )
+        ...
+        ...         if human is not None:
+        ...             human.kill()
+        """
+
+        return self.__simulation._proximity.in_proximity_accuracy(self)
 
     def in_proximity_performance(self: T) -> ProximityIter[T]:
         """Retrieve other agents that are in the `vi.config.Schema.radius` of the current agent.
@@ -256,27 +348,23 @@ class Agent(Sprite):
 
         return self.__simulation._proximity.in_proximity_performance(self)
 
-    def in_proximity_accuracy(self: T) -> ProximityIter[T]:
-        """Retrieve other agents that are in the `vi.config.Schema.radius` of the current agent.
+    def on_site(self) -> bool:
+        """Check whether the agent is currently on a site.
 
-        This proximity method calculates the distances between agents to determine whether
-        an agent is in the radius of the current agent.
+        Examples
+        --------
 
-        To calculate the distances between agents, up to four chunks have to be retrieved from the Proximity Engine.
-        These extra lookups, in combination with the vector distance calculation, have a noticable impact on performance.
-        Note however that this performance impact is only noticable with >1000 agents.
+        Stop the agent's movement when it reaches a site (think of a nice beach).
 
-        If you want to speed up your simulation at the cost of some accuracy,
-        consider using the `in_proximity_performance` method instead.
+        >>> class TravellingAgent(Agent):
+        ...     def update(self):
+        ...         if self.on_site():
+        ...             # crave that star damage
+        ...             self.freeze_movement()
         """
 
-        return self.__simulation._proximity.in_proximity_accuracy(self)
-
-    def on_site(self) -> bool:
-        """Check whether the agent is currently on a site."""
-
         return bool(
-            pg.sprite.spritecollideany(self, self.sites, pg.sprite.collide_mask)  # type: ignore
+            pg.sprite.spritecollideany(self, self._sites, pg.sprite.collide_mask)  # type: ignore
         )
 
     def freeze_movement(self):
@@ -293,7 +381,12 @@ class Agent(Sprite):
             self.__previous_move = None
 
     def change_image(self, index: int):
-        """Change the image of the agent."""
+        """Change the image of the agent.
+
+        If you want to change the agent's image to the second image in the images list,
+        then you can change the image to index 1:
+        >>> self.change_image(1)
+        """
 
         self._image_index = index
 
@@ -308,13 +401,12 @@ class Agent(Sprite):
         Examples
         --------
 
-        Saving the number of agents in radius:
+        Saving the number of agents that are currently in proximity:
 
-        >>> from vi import Agent
         >>> class MyAgent(Agent):
-        ...     def every_frame(self):
-        ...         in_radius = len(self.in_radius())
-        ...         self.save_data("in_radius", in_radius)
+        ...     def update(self):
+        ...         in_proximity = self.in_proximity_accuracy().count()
+        ...         self.save_data("in_proximity", in_proximity)
         """
 
         self.__simulation._metrics._temporary_snapshots[column].append(value)
@@ -364,14 +456,29 @@ class Agent(Sprite):
 
         return copy(self)
 
+    def kill(self):
+        """Kill the agent.
+
+        While violence usually isn't the right option,
+        sometimes you just want to murder some innocent agents inside your little computer.
+
+        But fear not!
+        By *killing* the agent, all you're really doing is removing it from the simulation.
+        """
+
+        super().kill()
+
     def is_dead(self) -> bool:
         """Is the agent dead?
 
         Death occurs when `kill` is called.
         """
-        return self.groups() == 0
+        return not self.is_alive()
 
     def is_alive(self) -> bool:
-        """Is the agent still alive?"""
+        """Is the agent still alive?
 
-        return not self.is_dead()
+        Death occurs when `kill` is called.
+        """
+
+        return super().alive()
