@@ -16,3 +16,6 @@ examples/covid.toml
 
 # Documentation
 public
+
+# Packaging
+dist
