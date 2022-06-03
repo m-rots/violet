@@ -11,6 +11,9 @@ A smol simulator framework built on top of [PyGame](https://www.pygame.org/docs/
 - Replay-able simulations with a ✨ time machine ✨
 - Type-safe configuration system (with TOML support)
 
+Want to get started right away?
+Check out the [Violet Starter Kit](https://github.com/m-rots/violet-starter-kit)!
+
 ## Installation
 
 Install the latest version of Violet with:
