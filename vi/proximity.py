@@ -13,6 +13,47 @@ U = TypeVar("U", bound="Agent")
 
 
 class ProximityIter(Generic[T]):
+    """The `ProximityIter` is a small wrapper around a *generator* of agents that are in proximity.
+
+    Now, you've probably never heard of a generator before, so let me give you the TLDR.
+    A Python generator is basically a stream of values. In our case, agents!
+
+    By not adding the agents in a list or in a set, but keeping them in a stream,
+    we can add multiple filters while keeping amazing performance.
+
+    When we're done with the filtering, we can either `count` the agents in our stream
+    (thereby consuming the stream, it's single-use only) or we can collect them in a list or a set.
+
+    Examples
+    --------
+
+    Imagine that our agent is Mudusa. We want to freeze the movement of all agents that we see.
+
+    We can implement this by simply looping over all the agents that are returned in the `ProximityIter` stream.
+
+    >>> class Medusa(Agent):
+    ...     def update(self):
+    ...         for agent in self.in_proximity_accuracy():
+    ...             agent.freeze_movement()
+
+    Or perhaps we simply want to change colour if there are at least two other agents nearby.
+
+    >>> class Chameleon(Agent):
+    ...     def update(self):
+    ...         if self.in_proximity_accuracy().count() >= 2:
+    ...             self.change_image(1)
+    ...         else:
+    ...             self.change_image(0)
+
+    In some cases, we want to loop over our stream of agents multiple times.
+    To make our stream reusable, we can add its agents to a list.
+
+    >>> class TheCollector(Agent):
+    ...     def update(self):
+    ...         collectables = list(self.self.in_proximity_accuracy())
+    ...         # do something with our collectables multiple times!
+    """
+
     _gen: Generator[T, None, None]
 
     def __init__(self, gen: Generator[T, None, None]):
@@ -30,7 +71,7 @@ class ProximityIter(Generic[T]):
         Count the number of dead agents in proximity.
 
         >>> zombies = (
-        ...     self.in_close_proximity()
+        ...     self.in_proximity_accuracy()
         ...     .filter(lambda agent: agent.is_dead())
         ...     .count()
         ... )
@@ -39,30 +80,57 @@ class ProximityIter(Generic[T]):
         self._gen = (agent for agent in self if predicate(agent))
         return self
 
+    def filter_kind(self, kind: Type[U]) -> ProximityIter[U]:
+        """Filter the agents that are in proximity based on their class.
+
+        Examples
+        --------
+
+        We don't want our Zombie to kill other zombies.
+        Just humans!
+
+        >>> class Human(Agent): ...
+
+        >>> class Zombie(Agent):
+        ...     def update(self):
+        ...         human = (
+        ...             self.in_proximity_accuracy()
+        ...             .filter_kind(Human)
+        ...             .first()
+        ...         )
+        ...
+        ...         if human is not None:
+        ...             human.kill()
+        """
+
+        return ProximityIter(agent for agent in self if isinstance(agent, kind))
+
     def first(self) -> Optional[T]:
         """Retrieve the first agent that's in proximity.
 
         If there are no agents in proximity, `None` is returned instead.
 
-        Example
-        -------
+        Examples
+        --------
 
-        >>> other_agent = self.in_radius().first()
-        >>> if other_agent is None:
-        ...     self.alone = True
-        ... else:
-        ...     self.alone = False
+        Want to kill the first agent you see every frame?
+
+        >>> other_agent = self.in_proximity_accuracy().first()
+        >>> if other_agent is not None:
+        ...     other_agent.kill()
         """
 
         return next(self._gen, None)
 
-    def filter_kind(self, kind: Type[U]) -> ProximityIter[U]:
-        """Filter the agents that are in proximity based on their class."""
-
-        return ProximityIter(agent for agent in self if isinstance(agent, kind))
-
     def collect_set(self) -> set[T]:
-        """Transform the generator into a set of agents that are in proximity."""
+        """Transform the generator into a set of agents that are in proximity.
+
+        This is the same as wrapping the stream in a `set`.
+
+        >>> nearby_agents = set(self.in_proximity_accuracy())
+
+        >>> nearby_agents = self.in_proximity_accuracy().collect_set()
+        """
 
         return set(self._gen)
 
@@ -72,7 +140,7 @@ class ProximityIter(Generic[T]):
         Example
         -------
 
-        >>> in_proximity = self.in_close_proximity().count()
+        >>> in_proximity = self.in_proximity_accuracy().count()
         """
 
         count = 0

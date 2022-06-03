@@ -1,9 +1,13 @@
 [tool.poetry]
 name = "violet-simulator"
 version = "0.1.0"
-description = ""
+description = "A smol simulator framework built on top of PyGame"
 authors = ["Storm Timmermans <stormtimmermans@icloud.com>"]
 repository = "https://github.com/m-rots/violet"
+homepage = "https://violet.m-rots.com"
+documentation = "https://api.violet.m-rots.com/vi"
+readme = "README.md"
+license = "MIT"
 packages = [{ include = "vi" }]
 
 [tool.poetry.dependencies]

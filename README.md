@@ -13,16 +13,16 @@ To learn more, read the [User Guide](https://violet.m-rots.com).
 
 ## Installation
 
-Installation is temporarily handled through git instead of PyPi:
+Install the latest version of Violet with:
 
 ```bash
-pip install -U "git+https://github.com/m-rots/violet.git@main"
+pip install -U violet-simulator
 ```
 
 Or with Poetry:
 
 ```bash
-poetry add "git+https://github.com/m-rots/violet.git#main"
+poetry add violet-simulator
 ```
 
 ## Example
