@@ -1,6 +1,6 @@
 # Examples
 
-Welcome to the examples! These show off `violet`'s functionality and explain how to use it.
+Welcome to the examples! These show off Violet's functionality and explain how to use it.
 
 ## Poetry
 
@@ -10,7 +10,7 @@ If you haven't installed it yet, please do follow [Poetry's installation page](h
 With Poetry installed, you can install all of Violet's dependencies with:
 
 ```
-poetry install -E full
+poetry install
 ```
 
 ## Getting Started
