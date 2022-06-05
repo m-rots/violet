@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Optional, Type, TypeVar
 import pygame as pg
 from pygame.gfxdraw import hline, vline
 from pygame.math import Vector2
+from typing_extensions import Self
 
 from .config import Config
 from .metrics import Metrics
@@ -31,9 +32,6 @@ class Shared:
 
     counter: int = 0
     """A counter that increases each tick of the simulation."""
-
-
-T = TypeVar("T", bound="HeadlessSimulation")
 
 
 class HeadlessSimulation:
@@ -114,11 +112,11 @@ class HeadlessSimulation:
         self._proximity = ProximityEngine(self._agents, self.config.radius)
 
     def batch_spawn_agents(
-        self: T,
+        self,
         count: int,
         agent_class: Type[AgentClass],
         images: list[str],
-    ) -> T:
+    ) -> Self:
         """Spawn multiple agents into the simulation.
 
         The number of agents that are spawned can be adjusted by modifying the `agent_count` option in the config.
@@ -133,10 +131,10 @@ class HeadlessSimulation:
         return self
 
     def spawn_agent(
-        self: T,
+        self,
         agent_class: Type[AgentClass],
         images: list[str],
-    ) -> T:
+    ) -> Self:
         """Spawn one agent into the simulation.
 
         You almost always want to call `batch_spawn_agents` instead.
@@ -147,7 +145,7 @@ class HeadlessSimulation:
 
         return self
 
-    def spawn_obstacle(self: T, image_path: str, x: int, y: int) -> T:
+    def spawn_obstacle(self, image_path: str, x: int, y: int) -> Self:
         """Spawn one obstacle into the simulation. The given coordinates will be the centre of the obstacle.
 
         When agents collide with an obstacle, they will make a 180 degree turn.
@@ -161,7 +159,7 @@ class HeadlessSimulation:
 
         return self
 
-    def spawn_site(self: T, image_path: str, x: int, y: int) -> T:
+    def spawn_site(self, image_path: str, x: int, y: int) -> Self:
         """Spawn one site into the simulation. The given coordinates will be the centre of the site."""
 
         Obstacle(

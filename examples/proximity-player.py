@@ -36,8 +36,9 @@ class Proxyman(Agent):
     # So when we see that a Player is in the set of agents that are in proximity,
     # then we want our agent to turn green. Otherwise they stay white.
     def update(self):
-        player = self.in_proximity_accuracy().filter_kind(Player).first()
-        #                             👆 see what happens if you change it to performance.
+        player = (
+            self.in_proximity_accuracy().without_distance().filter_kind(Player).first()
+        )  #                      👆 see what happens if you change it to performance.
 
         if player is not None:
             self.change_image(1)

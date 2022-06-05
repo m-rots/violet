@@ -15,6 +15,7 @@ from pygame.math import Vector2
 from pygame.rect import Rect
 from pygame.sprite import Group, Sprite
 from pygame.surface import Surface
+from typing_extensions import Self
 
 from .config import Config
 from .proximity import ProximityIter
@@ -22,9 +23,6 @@ from .util import random_angle, random_pos, round_pos
 
 if TYPE_CHECKING:
     from .simulation import HeadlessSimulation, Shared
-
-
-T = TypeVar("T", bound="Agent")
 
 
 class Agent(Sprite):
@@ -287,7 +285,7 @@ class Agent(Sprite):
         # Actually update the position at last.
         self.pos += self.move
 
-    def in_proximity_accuracy(self: T) -> ProximityIter[T]:
+    def in_proximity_accuracy(self) -> ProximityIter[tuple[Self, float]]:
         """Retrieve other agents that are in the `vi.config.Schema.radius` of the current agent.
 
         This proximity method calculates the distances between agents to determine whether
@@ -324,17 +322,32 @@ class Agent(Sprite):
         ...     def update(self):
         ...         human = (
         ...             self.in_proximity_accuracy()
+        ...             .without_distance()
         ...             .filter_kind(Human) # 👈 don't want to kill other zombies
         ...             .first() # 👈 can return None if no humans are around
         ...         )
         ...
         ...         if human is not None:
         ...             human.kill()
+
+        Calculate the average distance of agents that are in proximity.
+
+        >>> class Heimerdinger(Agent):
+        ...     def update(self):
+        ...         in_proximity = list(self.in_proximity_accuracy())
+        ...
+        ...         dist_sum = sum(dist for agent, dist in in_proximity)
+        ...
+        ...         dist_avg = (
+        ...             dist_sum / len(in_proximity)
+        ...             if len(in_proximity) > 0
+        ...             else 0
+        ...         )
         """
 
         return self.__simulation._proximity.in_proximity_accuracy(self)
 
-    def in_proximity_performance(self: T) -> ProximityIter[T]:
+    def in_proximity_performance(self) -> ProximityIter[Self]:
         """Retrieve other agents that are in the `vi.config.Schema.radius` of the current agent.
 
         Unlike `in_proximity_accuracy`, this proximity method does not calculate the distances between agents.
@@ -429,7 +442,7 @@ class Agent(Sprite):
             angle = self.move.angle_to(Vector2((0, -1)))
             snapshots["angle"].append(round(angle))
 
-    def __copy__(self):
+    def __copy__(self) -> Self:
         """Create a copy of this agent and spawn it into the simulation.
 
         Note that this only copies the `pos` and `move` vectors.
@@ -446,7 +459,7 @@ class Agent(Sprite):
 
         return agent
 
-    def reproduce(self):
+    def reproduce(self) -> Self:
         """Create a new agent and spawn it into the simulation.
 
         All values will be reset to their defaults,

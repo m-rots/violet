@@ -2,7 +2,6 @@
 A smol simulator framework built on top of [PyGame](https://www.pygame.org/docs/).
 
 - Automatic agent wandering behaviour
-- Automatic obstacle avoidance
 - Fully deterministic simulations with PRNG seeds
 - Install Violet with a simple `pip install` 😎
 - Matrix-powered multi-threaded configuration testing
@@ -152,6 +151,7 @@ Explore some of the modules on the left and experiment away!
 
 from dataclasses import dataclass
 
+from pygame.math import Vector2
 from serde.de import deserialize
 from serde.se import serialize
 
