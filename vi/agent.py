@@ -7,7 +7,7 @@ Inheriting the Agent class allows you to modify the behaviour of the agents in t
 from __future__ import annotations
 
 from copy import copy
-from typing import TYPE_CHECKING, Any, Optional, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Generator, Optional, Union
 
 import pygame as pg
 from pygame.mask import Mask
@@ -22,6 +22,7 @@ from .proximity import ProximityIter
 from .util import random_angle, random_pos, round_pos
 
 if TYPE_CHECKING:
+    from .obstacle import Obstacle
     from .simulation import HeadlessSimulation, Shared
 
 
@@ -187,6 +188,59 @@ class Agent(Sprite):
         """
 
         ...
+
+    def obstacle_intersections(
+        self, scale: float = 1
+    ) -> Generator[Vector2, None, None]:
+        """Retrieve the centre coordinates of all obstacle intersections.
+
+        If you not only want to check for obstacle collision,
+        but also want to retrieve the coordinates of pixel groups
+        that are colliding with your agent, then `obstacle_intersections` is for you!
+
+        If you only have one obstacle in your environment,
+        but it doesn't have a fill, only a stroke,
+        then your agent could possibly be colliding with different areas of the stroke.
+        Therefore, this method checks the bitmasks of both the agent and the obstacle
+        to calculate the overlapping bitmask.
+        From this overlapping bitmask,
+        the centre coordinates of all groups of connected pixels are returned.
+
+        To emulate a bigger (or smaller) radius,
+        you can pass along the `scale` option.
+        A scale of 2 makes your agent twice as big,
+        but only for calculating the intersecting bitmasks.
+        """
+
+        mask = pg.mask.from_surface(self.image)
+
+        # Scale the mask to the desired size
+        width, height = mask.get_size()
+        mask = mask.scale((width * scale, height * scale))
+
+        # Align the mask to the centre position of the agent
+        rect = mask.get_rect()
+        rect.center = self.center
+
+        for sprite in self._obstacles.sprites():
+            obstacle: Obstacle = sprite  # type: ignore
+
+            # Calculate the mask offset
+            x = obstacle.rect.x - rect.x
+            y = obstacle.rect.y - rect.y
+
+            overlap = mask.overlap_mask(obstacle.mask, offset=(x, y))
+
+            # For some reason PyGame has the wrong type hint here (single instead of list)
+            overlap_rects: list[pg.rect.Rect] = overlap.get_bounding_rects()  # type: ignore
+
+            for overlap_rect in overlap_rects:
+                # Undo the offset
+                overlap_rect.x += rect.x
+                overlap_rect.y += rect.y
+
+                # Return the centre coordinates of the connected pixels
+                yield Vector2(overlap_rect.center)
 
     def on_spawn(self):
         """Run any code when the agent is spawned into the simulation.
