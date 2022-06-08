@@ -1,3 +1,41 @@
+"""
+Creating a new `Simulation` is as simple as adding two lines of code to a Python file:
+
+>>> from vi import Simulation
+>>> Simulation().run()
+
+To add some agents to your simulation, you have two tools available to you:
+1. `HeadlessSimulation.batch_spawn_agents`
+2. `HeadlessSimulation.spawn_agent`
+
+As a general rule, you should avoid calling `HeadlessSimulation.spawn_agent` in a loop
+as it will load the images from disk multiple times.
+Instead, you should call `HeadlessSimulation.batch_spawn_agents` with your desired agent count.
+This will only load the images once and cheaply distribute them across the agents.
+
+If you want to spice things up, you can also add obstacles and sites to your simulation:
+- `HeadlessSimulation.spawn_obstacle`
+- `HeadlessSimulation.spawn_site`
+
+To customise your simulation, you can provide a `vi.config.Config` to the simulation's constructor.
+
+>>> from vi import Agent, Config, Simulation
+>>>
+>>> (
+...     Simulation(Config(duration=60 * 10, image_rotation=True))
+...     .batch_spawn_agents(100, Agent, ["examples/images/white.png"])
+...     .run()
+... )
+
+Once you're finished setting up your experiment
+and want to start researching different parameters,
+then you probably don't want to open a window every time.
+Violet refers to this as Headless Mode.
+
+Headless Mode allows you to run your simulation a bit faster by not calling any rendering-related code.
+To activate Headless Mode, simply swap `Simulation` for `HeadlessSimulation` and your GPU should now remain idle!
+"""
+
 from __future__ import annotations
 
 import random
@@ -22,6 +60,8 @@ if TYPE_CHECKING:
 
 @dataclass
 class Shared:
+    """A mutatable container for data that needs to be shared between `vi.agent.Agent` and `Simulation`."""
+
     prng_move: random.Random
     """A PRNG for agent movement exclusively.
     
@@ -35,18 +75,46 @@ class Shared:
 
 
 class HeadlessSimulation:
-    """The simulation class provides a snapshot of the current tick of the simulation.
+    """The Headless Mode equivalent of `Simulation`.
 
-    This snapshot includes the state of all agents, obstacles and sites.
+    Headless Mode removes all the rendering logic from the simulation
+    to not only remove the annoying simulation window from popping up every time,
+    but to also speed up your simulation when it's GPU bound.
 
-    However, you don't really have to care about the internal details of the Simulation.
-    Instead, you usually only want to use this class to:
+    Combining Headless Mode with `vi.config.Matrix` and Python's [multiprocessing](https://docs.python.org/3/library/multiprocessing.html) opens a realm of new possibilities.
+    Vi's Matrix is `vi.config.Config` on steroids.
+    It allows you to pass lists of values instead of single values on supported parameters,
+    to then effortlessly combine each unique combination of values into its own `vi.config.Config`.
+    When combined with [multiprocessing](https://docs.python.org/3/library/multiprocessing.html),
+    we can run multiple configs in parallel.
 
-    1. Create (and optionally configure) the simulation.
-    2. Spawn the agents, obstacles and sites with their respective `batch_spawn_agents`, `spawn_obstacle` and `spawn_site` functions.
-    3. Run the simulation!
-
-    If a custom config isn't provided when creating the simulation, the default values of `BaseConfig` will be used instead.
+    >>> from multiprocessing import Pool
+    >>> from vi import Agent, Config, HeadlessSimulation, Matrix
+    >>> import polars as pl
+    >>>
+    >>>
+    >>> def run_simulation(config: Config) -> pl.DataFrame:
+    ...     return (
+    ...         HeadlessSimulation(config)
+    ...         .batch_spawn_agents(100, Agent, ["examples/images/white.png"])
+    ...         .run()
+    ...         .snapshots
+    ...     )
+    >>>
+    >>>
+    >>> if __name__ == "__main__":
+    ...     # We create a threadpool to run our simulations in parallel
+    ...     with Pool() as p:
+    ...         # The matrix will create four unique configs
+    ...         matrix = Matrix(radius=[25, 50], seed=[1, 2])
+    ...
+    ...         # Create unique combinations of matrix values
+    ...         configs = matrix.to_configs(Config)
+    ...
+    ...         # Combine our individual DataFrames into one big DataFrame
+    ...         df = pl.concat(p.map(run_simulation, configs))
+    ...
+    ...         print(df)
     """
 
     shared: Shared
@@ -119,7 +187,16 @@ class HeadlessSimulation:
     ) -> Self:
         """Spawn multiple agents into the simulation.
 
-        The number of agents that are spawned can be adjusted by modifying the `agent_count` option in the config.
+        Examples
+        --------
+
+        Spawn 100 `vi.agent.Agent`'s into the simulation with `examples/images/white.png` as image.
+
+        >>> (
+        ...     Simulation()
+        ...     .batch_spawn_agents(100, Agent, ["examples/images/white.png"])
+        ...     .run()
+        ... )
         """
 
         # Load images once so the files don't have to be read multiple times.
@@ -137,8 +214,20 @@ class HeadlessSimulation:
     ) -> Self:
         """Spawn one agent into the simulation.
 
-        You almost always want to call `batch_spawn_agents` instead.
-        This method should only be used to create a human-controllable player.
+        While you can run `spawn_agent` in a for-loop,
+        you probably want to call `batch_spawn_agents` instead
+        as `batch_spawn_agents` optimises the image loading process.
+
+        Examples
+        --------
+
+        Spawn a single `vi.agent.Agent` into the simulation with `examples/images/white.png` as image:
+
+        >>> (
+        ...     Simulation()
+        ...     .spawn_agent(Agent, ["examples/images/white.png"])
+        ...     .run()
+        ... )
         """
 
         agent_class(images=self._load_images(images), simulation=self)
@@ -149,6 +238,20 @@ class HeadlessSimulation:
         """Spawn one obstacle into the simulation. The given coordinates will be the centre of the obstacle.
 
         When agents collide with an obstacle, they will make a 180 degree turn.
+
+        Examples
+        --------
+
+        Spawn a single obstacle into the simulation with `examples/images/bubble-full.png` as image.
+        In addition, we place the obstacle in the centre of our window.
+
+        >>> config = Config()
+        >>> x, y = config.window.as_tuple()
+        >>> (
+        ...     Simulation(config)
+        ...     .spawn_obstacle("examples/images/bubble-full.png", x // 2, y // 2)
+        ...     .run()
+        ... )
         """
 
         Obstacle(
@@ -160,7 +263,20 @@ class HeadlessSimulation:
         return self
 
     def spawn_site(self, image_path: str, x: int, y: int) -> Self:
-        """Spawn one site into the simulation. The given coordinates will be the centre of the site."""
+        """Spawn one site into the simulation. The given coordinates will be the centre of the site.
+
+        Examples
+        --------
+
+        Spawn a single site into the simulation with `examples/images/site.png` as image.
+        In addition, we give specific coordinates where the site should be placed.
+
+        >>> (
+        ...     Simulation(config)
+        ...     .spawn_site("examples/images/site.png", x=375, y=375)
+        ...     .run()
+        ... )
+        """
 
         Obstacle(
             containers=[self._all, self._sites],
@@ -171,7 +287,7 @@ class HeadlessSimulation:
         return self
 
     def run(self) -> Metrics:
-        """Run the simulation until it's ended by closing the window."""
+        """Run the simulation until it's ended by closing the window or when the `vi.config.Schema.duration` has elapsed."""
 
         self._running = True
 
@@ -264,6 +380,13 @@ class HeadlessSimulation:
 
 
 class Simulation(HeadlessSimulation):
+    """
+    This class offers the same functionality as `HeadlessSimulation`,
+    but adds logic to automatically draw all agents, obstacles and sites to your screen.
+
+    If a custom config isn't provided when creating the simulation, the default values of `Config` will be used instead.
+    """
+
     _background: pg.surface.Surface
     _clock: pg.time.Clock
     _screen: pg.surface.Surface
