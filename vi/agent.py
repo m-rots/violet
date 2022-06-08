@@ -68,7 +68,16 @@ class Agent(Sprite):
     """The area in which the agent is free to move."""
 
     move: Vector2
-    """The current angle and speed used for the agent's movement.
+    """A two-dimensional vector representing the delta between its current and next position.
+
+    Note that `move` isn't added to the agent's `pos` automatically.
+    Instead, you should manually add the move delta to `pos`, like so:
+
+    >>> self.pos += self.move
+
+    The vector `Vector2(2, 1)` indicates that the agent will be moving 2 pixels along the x axis
+    and 1 pixel along the y axis.
+    You can use the `Vector2` class to calculate the agent's velocity by calling `length`.
     
     This property is also used to automatically rotate the agent's image
     when `vi.config.Schema.image_rotation` is enabled.
