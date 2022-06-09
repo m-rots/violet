@@ -23,12 +23,12 @@ def round_pos(pos: Vector2) -> tuple[int, int]:
     return round(pos.x), round(pos.y)
 
 
-def random_angle(lenght: float, prng: Optional[random.Random] = None) -> Vector2:
+def random_angle(length: float, prng: Optional[random.Random] = None) -> Vector2:
     """Retrieve a randomly-angled vector with a given length."""
 
     uniform = prng.uniform if prng else random.uniform
 
-    vec = Vector2(lenght, 0)
+    vec = Vector2(length, 0)
     vec.rotate_ip(uniform(0, 360))
     return vec
 
