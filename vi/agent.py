@@ -86,9 +86,6 @@ class Agent(Sprite):
     pos: Vector2
     """The current (centre) position of the agent."""
 
-    __previous_move: Optional[Vector2] = None
-    """The value of the `move` vector before the agent was frozen."""
-
     _obstacles: Group
     """The group of obstacles the agent can collide with."""
 
@@ -97,7 +94,8 @@ class Agent(Sprite):
 
     __simulation: HeadlessSimulation
 
-    _still_stuck: bool = False
+    _moving: bool = True
+    """The agent's movement will freeze when moving is set to False."""
 
     def __init__(
         self,
@@ -311,6 +309,9 @@ class Agent(Sprite):
         2. If the agent collides with any obstacles, then the agent will turn around 180 degrees.
         3. If the agent has not collided with any obstacles, it will have the opportunity to slightly change its angle.
         """
+        if not self._moving:
+            return
+
         changed = self.there_is_no_escape()
 
         prng = self.shared.prng_move
@@ -446,15 +447,12 @@ class Agent(Sprite):
     def freeze_movement(self):
         """Freeze the movement of the agent. The movement can be continued by calling `continue_movement`."""
 
-        self.__previous_move = self.move
-        self.move = Vector2(0, 0)
+        self._moving = False
 
     def continue_movement(self):
-        """Continue the movement of the agent by using the angle and speed of the agent before its movement was frozen."""
+        """Continue the movement of the agent from before its movement was frozen."""
 
-        if self.__previous_move is not None:
-            self.move = self.__previous_move
-            self.__previous_move = None
+        self._moving = True
 
     def change_image(self, index: int):
         """Change the image of the agent.
