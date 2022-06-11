@@ -47,9 +47,9 @@ from pygame.gfxdraw import hline, vline
 from pygame.math import Vector2
 from typing_extensions import Self
 
+from ._static import _StaticSprite
 from .config import Config
 from .metrics import Metrics
-from .obstacle import Obstacle
 from .proximity import ProximityEngine
 
 if TYPE_CHECKING:
@@ -133,6 +133,12 @@ class HeadlessSimulation:
 
     _next_agent_id: int = 0
     """The agent identifier to be given next."""
+
+    _next_obstacle_id: int = 0
+    """The obstacle identifier to be given next."""
+
+    _next_site_id: int = 0
+    """The site identifier to be given next."""
 
     # Proximity
     _proximity: ProximityEngine
@@ -254,8 +260,9 @@ class HeadlessSimulation:
         ... )
         """
 
-        Obstacle(
+        _StaticSprite(
             containers=[self._all, self._obstacles],
+            id=self._obstacle_id(),
             image=self._load_image(image_path),
             pos=Vector2((x, y)),
         )
@@ -278,8 +285,9 @@ class HeadlessSimulation:
         ... )
         """
 
-        Obstacle(
+        _StaticSprite(
             containers=[self._all, self._sites],
+            id=self._site_id(),
             image=self._load_image(image_path),
             pos=Vector2((x, y)),
         )
@@ -377,6 +385,18 @@ class HeadlessSimulation:
         self._next_agent_id += 1
 
         return agent_id
+
+    def _obstacle_id(self) -> int:
+        obstacle_id = self._next_obstacle_id
+        self._next_obstacle_id += 1
+
+        return obstacle_id
+
+    def _site_id(self) -> int:
+        site_id = self._next_site_id
+        self._next_site_id += 1
+
+        return site_id
 
 
 class Simulation(HeadlessSimulation):

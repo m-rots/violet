@@ -8,13 +8,19 @@ from pygame.surface import Surface
 from .util import round_pos
 
 
-class Obstacle(Sprite):
+class _StaticSprite(Sprite):
+    id: int
+
     image: Surface
     rect: Rect
     mask: Mask
 
-    def __init__(self, containers: list[Group], image: Surface, pos: Vector2) -> None:
+    def __init__(
+        self, containers: list[Group], id: int, image: Surface, pos: Vector2
+    ) -> None:
         Sprite.__init__(self, *containers)
+
+        self.id = id
 
         self.image = image
         self.rect = self.image.get_rect()

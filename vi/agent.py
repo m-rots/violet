@@ -7,7 +7,7 @@ Inheriting the Agent class allows you to modify the behaviour of the agents in t
 from __future__ import annotations
 
 from copy import copy
-from typing import TYPE_CHECKING, Any, Callable, Generator, Optional, Union
+from typing import TYPE_CHECKING, Any, Generator, Optional
 
 import pygame as pg
 from pygame.mask import Mask
@@ -22,7 +22,7 @@ from .proximity import ProximityIter
 from .util import random_angle, random_pos, round_pos
 
 if TYPE_CHECKING:
-    from .obstacle import Obstacle
+    from ._static import _StaticSprite
     from .simulation import HeadlessSimulation, Shared
 
 
@@ -232,7 +232,7 @@ class Agent(Sprite):
         rect.center = self.center
 
         for sprite in self._obstacles.sprites():
-            obstacle: Obstacle = sprite  # type: ignore
+            obstacle: _StaticSprite = sprite  # type: ignore
 
             # Calculate the mask offset
             x = obstacle.rect.x - rect.x
