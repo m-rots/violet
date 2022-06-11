@@ -440,9 +440,40 @@ class Agent(Sprite):
         ...             self.freeze_movement()
         """
 
-        return bool(
-            pg.sprite.spritecollideany(self, self._sites, pg.sprite.collide_mask)  # type: ignore
-        )
+        return self.on_site_id() is not None
+
+    def on_site_id(self) -> Optional[int]:
+        """Get the identifier of the site the agent is currently on.
+
+        Examples
+        --------
+
+        Stop the agent's movement when it reaches a site to inspect.
+        In addition, the current site identifier is saved to the DataFrame.
+
+        ```python
+        class SiteInspector(Agent):
+            def update(self):
+                site_id = self.on_site_id()
+
+                # Save the site id to the DataFrame
+                self.save_data("site", site_id)
+
+                # bool(site_id) would be inaccurate
+                # as a site_id of 0 will return False.
+                # Therefore, we check whether it is not None instead.
+                if site_id is not None:
+                    # Inspect the site
+                    self.freeze_movement()
+        ```
+        """
+
+        site: Optional[_StaticSprite] = pg.sprite.spritecollideany(self, self._sites, pg.sprite.collide_mask)  # type: ignore
+
+        if site is not None:
+            return site.id
+        else:
+            return None
 
     def freeze_movement(self):
         """Freeze the movement of the agent. The movement can be continued by calling `continue_movement`."""
