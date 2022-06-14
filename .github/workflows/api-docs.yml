@@ -18,7 +18,7 @@ jobs:
         run: poetry install
 
       - name: Build documentation
-        run: poetry run pdoc vi -o ./public
+        run: poetry run pdoc vi -o ./public -e vi=https://github.com/m-rots/violet/blob/main/vi/
 
       - name: Publish to Pages
         uses: cloudflare/wrangler-action@2.0.0
