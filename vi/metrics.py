@@ -188,6 +188,11 @@ from typing import Any
 import polars as pl
 
 
+__all__ = [
+    "Metrics",
+]
+
+
 @dataclass
 class Fps:
     _fps: list[float] = field(default_factory=list)
@@ -223,6 +228,3 @@ class Metrics:
         self.snapshots.vstack(df, in_place=True)
 
         self._temporary_snapshots = defaultdict(list)
-
-
-__all__ = ["Metrics"]

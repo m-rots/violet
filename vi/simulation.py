@@ -60,6 +60,12 @@ if TYPE_CHECKING:
     AgentClass = TypeVar("AgentClass", bound=Agent)
 
 
+__all__ = [
+    "HeadlessSimulation",
+    "Simulation",
+]
+
+
 @dataclass
 class Shared:
     """A mutatable container for data that needs to be shared between `vi.agent.Agent` and `Simulation`."""

@@ -9,6 +9,14 @@ from serde.se import serialize
 from serde.toml import from_toml
 
 
+__all__ = [
+    "dataclass",
+    "Config",
+    "Matrix",
+    "Schema",
+    "Window"
+]
+
 def _embiggen(input_list: list[Any], copies: int):
     """The in-place deep-copy variant of list multiplication."""
 
@@ -413,6 +421,3 @@ class Config(Schema[int, float]):
     """
 
     ...
-
-
-__all__ = ["Schema", "Config", "Matrix", "Window"]

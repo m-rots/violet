@@ -123,7 +123,7 @@ dependencies = [
 [metadata]
 lock_version = "4.2"
 groups = ["default", "dev"]
-content_hash = "sha256:0fbbb3e17269edf667a183cbc5cfa5ca9010b4468b4cf198be99db53e925189c"
+content_hash = "sha256:fee78dc9c5e0ed9ade93f266044117ac6e19edd2ee9339a2e94c39739d1ce22d"
 
 [metadata.files]
 "casefy 0.1.7" = [

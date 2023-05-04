@@ -28,6 +28,11 @@ if TYPE_CHECKING:
     from .simulation import HeadlessSimulation, Shared
 
 
+__all__ = [
+    "Agent",
+]
+
+
 class Agent(Sprite):
     """
     The `Agent` class is home to Violet's various additions and is

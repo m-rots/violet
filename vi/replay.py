@@ -11,6 +11,11 @@ if TYPE_CHECKING:
     from polars import DataFrame, Series
 
 
+__all__ = [
+    "TimeMachine",
+]
+
+
 def load_images(image_paths: list[str]) -> list[pg.surface.Surface]:
     return [pg.image.load(path).convert_alpha() for path in image_paths]
 

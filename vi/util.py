@@ -10,6 +10,14 @@ if TYPE_CHECKING:
     from pygame.rect import Rect
 
 
+__all__ = [
+    "probability",
+    "round_pos",
+    "random_angle",
+    "random_pos",
+]
+
+
 def probability(threshold: float, prng: Optional[random.Random] = None) -> bool:
     """Randomly retrieve True or False depending on the given probability.
 

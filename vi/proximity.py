@@ -19,6 +19,12 @@ if TYPE_CHECKING:
 
     from .agent import Agent
 
+
+__all__ = [
+    "ProximityIter",
+]
+
+
 AgentClass = TypeVar("AgentClass", bound="Agent")
 T = TypeVar("T")
 U = TypeVar("U")
@@ -328,6 +334,3 @@ class ProximityEngine:
 
         agents = self.__accurate_retrieval(agent)
         return ProximityIter(agents)
-
-
-__all__ = ["ProximityIter"]

@@ -160,3 +160,33 @@ from .proximity import ProximityIter
 from .replay import TimeMachine
 from .simulation import HeadlessSimulation, Simulation
 from .util import probability
+
+
+__all__ = [
+    # agent
+    "Agent",
+
+    # config
+    "Config",
+    "Matrix",
+    "Window",
+
+    # proximity
+    "ProximityIter",
+
+    # replay
+    "TimeMachine",
+
+    # simulation
+    "HeadlessSimulation",
+    "Simulation",
+
+    # util
+    "probability",
+
+    # re-exports
+    "dataclass",
+    "deserialize",
+    "serialize",
+    "Vector2"
+]
