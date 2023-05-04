@@ -1,5 +1,6 @@
 from vi import Agent, Simulation
 
+
 (
     # Step 1: Create a new simulation.
     Simulation()

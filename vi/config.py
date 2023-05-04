@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Any, Generic, Optional, Type, TypeVar, Union
@@ -37,20 +39,17 @@ def _matrixify(matrix: dict[str, Union[Any, list[Any]]]) -> list[dict[str, Any]]
                 combinations.append({key: values})
 
         # If we have a list of dicts, we can simply add our key!
-        else:
-            # Multiple values
-            if isinstance(values, list):
-                original_length = len(combinations)
-                _embiggen(combinations, len(values))
+        elif isinstance(values, list): # Multiple values
+            original_length = len(combinations)
+            _embiggen(combinations, len(values))
 
-                for index, entry in enumerate(combinations):
-                    value_index = index // original_length
-                    entry[key] = values[value_index]
+            for index, entry in enumerate(combinations):
+                value_index = index // original_length
+                entry[key] = values[value_index]
 
-            # Single value
-            elif values is not None:
-                for entry in combinations:
-                    entry[key] = values
+        elif values is not None: # Single value
+            for entry in combinations:
+                entry[key] = values
 
     for index, entry in enumerate(combinations):
         entry["id"] = index + 1
@@ -191,13 +190,13 @@ class Schema(Generic[MatrixInt, MatrixFloat]):
 
     duration: int = 0
     """The duration of the simulation in frames.
-    
+
     Defaults to `0`, indicating that the simulation runs indefinitely.
     """
 
     fps_limit: int = 60
     """Limit the number of frames-per-second.
-    
+
     Defaults to 60 fps, equal to most screens' refresh rates.
 
     Set to `0` to uncap the framerate.
@@ -205,7 +204,7 @@ class Schema(Generic[MatrixInt, MatrixFloat]):
 
     image_rotation: bool = False
     """Opt-in image rotation support.
-    
+
     Please be aware that the rotation of images degrades performance by ~15%
     and currently causes a bug where agents clip into obstacles.
     """
@@ -221,7 +220,7 @@ class Schema(Generic[MatrixInt, MatrixFloat]):
 
     seed: Optional[Union[int, MatrixInt]] = None
     """The PRNG seed to use for the simulation.
-    
+
     Defaults to `None`, indicating that no seed is used.
     """
 

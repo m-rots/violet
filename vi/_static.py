@@ -1,12 +1,18 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import pygame as pg
-from pygame.mask import Mask
-from pygame.math import Vector2
-from pygame.rect import Rect
 from pygame.sprite import Group, Sprite
-from pygame.surface import Surface
 
 from .util import round_pos
 
+
+if TYPE_CHECKING:
+    from pygame.mask import Mask
+    from pygame.math import Vector2
+    from pygame.rect import Rect
+    from pygame.surface import Surface
 
 class _StaticSprite(Sprite):
     id: int

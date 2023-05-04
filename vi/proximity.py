@@ -13,9 +13,10 @@ from typing import (
     overload,
 )
 
-from pygame.sprite import Group
 
 if TYPE_CHECKING:
+    from pygame.sprite import Group
+
     from .agent import Agent
 
 AgentClass = TypeVar("AgentClass", bound="Agent")

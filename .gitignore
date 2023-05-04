@@ -1,11 +1,9 @@
 # Python
-.venv
 __pycache__
-
-# Temporarily ignore sensitive examples
-examples/aggregation.py
-examples/covid.py
-examples/covid.toml
+pyrightconfig.json
+.pdm-python
+.ruff_cache
+.venv
 
 # Ignore exported simulations
 *.ipc
@@ -14,8 +12,7 @@ examples/covid.toml
 *.png
 !/examples/images/*.png
 
-# Documentation
-public
-
-# Packaging
+# Build Output
+build
 dist
+public

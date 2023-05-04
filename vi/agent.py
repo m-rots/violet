@@ -10,19 +10,21 @@ from copy import copy
 from typing import TYPE_CHECKING, Any, Generator, Optional
 
 import pygame as pg
-from pygame.mask import Mask
 from pygame.math import Vector2
-from pygame.rect import Rect
 from pygame.sprite import Group, Sprite
-from pygame.surface import Surface
-from typing_extensions import Self
 
-from .config import Config
-from .proximity import ProximityIter
 from .util import random_angle, random_pos, round_pos
 
+
 if TYPE_CHECKING:
+    from pygame.mask import Mask
+    from pygame.rect import Rect
+    from pygame.surface import Surface
+    from typing_extensions import Self
+
     from ._static import _StaticSprite
+    from .config import Config
+    from .proximity import ProximityIter
     from .simulation import HeadlessSimulation, Shared
 
 
@@ -45,7 +47,7 @@ class Agent(Sprite):
 
     config: Config
     """The config of the simulation that's shared with all agents.
-    
+
     The config can be overriden when inheriting the Agent class.
     However, the config must always:
 
@@ -78,7 +80,7 @@ class Agent(Sprite):
     The vector `Vector2(2, 1)` indicates that the agent will be moving 2 pixels along the x axis
     and 1 pixel along the y axis.
     You can use the `Vector2` class to calculate the agent's velocity by calling `length`.
-    
+
     This property is also used to automatically rotate the agent's image
     when `vi.config.Schema.image_rotation` is enabled.
     """

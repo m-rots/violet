@@ -1,8 +1,13 @@
+from __future__ import annotations
+
 import random
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from pygame.math import Vector2
-from pygame.rect import Rect
+
+
+if TYPE_CHECKING:
+    from pygame.rect import Rect
 
 
 def probability(threshold: float, prng: Optional[random.Random] = None) -> bool:

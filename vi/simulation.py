@@ -45,14 +45,16 @@ from typing import TYPE_CHECKING, Optional, Type, TypeVar
 import pygame as pg
 from pygame.gfxdraw import hline, vline
 from pygame.math import Vector2
-from typing_extensions import Self
 
 from ._static import _StaticSprite
 from .config import Config
 from .metrics import Metrics
 from .proximity import ProximityEngine
 
+
 if TYPE_CHECKING:
+    from typing_extensions import Self
+
     from .agent import Agent
 
     AgentClass = TypeVar("AgentClass", bound=Agent)
@@ -64,7 +66,7 @@ class Shared:
 
     prng_move: random.Random
     """A PRNG for agent movement exclusively.
-    
+
     To make sure that the agent's movement isn't influenced by other random function calls,
     all agents share a decoupled PRNG for movement exclusively.
     This ensures that the agents will always move the exact same way given a seed.
@@ -146,7 +148,7 @@ class HeadlessSimulation:
     # Config that's passed on to agents as well
     config: Config
     """The config of the simulation that's shared with all agents.
-    
+
     The config can be overriden when inheriting the Simulation class.
     However, the config must always:
 
@@ -156,7 +158,7 @@ class HeadlessSimulation:
 
     _metrics: Metrics
     """A collection of all the Snapshots that have been created in the simulation.
-    
+
     Each agent produces a Snapshot at every frame in the simulation.
     """
 

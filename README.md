@@ -21,10 +21,10 @@ Install the latest version of Violet with:
 pip3 install -U violet-simulator
 ```
 
-Or with [Poetry](https://python-poetry.org):
+Or with [PDM](https://pdm.fming.dev):
 
 ```bash
-poetry add violet-simulator
+pdm add violet-simulator
 ```
 
 ## Example

@@ -6,6 +6,7 @@ import pygame as pg
 
 from .config import Window
 
+
 if TYPE_CHECKING:
     from polars import DataFrame, Series
 

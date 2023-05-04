@@ -141,7 +141,7 @@ Some examples of data that might be useful to save are:
     >>> class Bird(Agent):
     ...     def update(self):
     ...         self.save_data("kind", "bird")
- 
+
     >>> class Fish(Agent):
     ...     def update(self):
     ...         self.save_data("kind", "fish")
@@ -190,15 +190,15 @@ import polars as pl
 
 @dataclass
 class Fps:
-    __fps: list[float] = field(default_factory=list)
+    _fps: list[float] = field(default_factory=list)
 
     def _push(self, fps: float):
-        self.__fps.append(fps)
+        self._fps.append(fps)
 
     def to_polars(self) -> pl.Series:
         import polars as pl
 
-        return pl.Series("fps", self.__fps)
+        return pl.Series("fps", self._fps)
 
 
 class Metrics:

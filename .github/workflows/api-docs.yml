@@ -6,19 +6,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Setup Python 3.9
-        uses: actions/setup-python@v3
+      - name: Setup PDM
+        uses: pdm-project/setup-pdm@v3
         with:
-          python-version: "3.9"
+          python-version: 3.9
+          cache: true
 
-      - name: Install Poetry
-        run: curl -sSL https://install.python-poetry.org | python3 -
-  
       - name: Install dependencies
-        run: poetry install
+        run: pdm install --dev
 
       - name: Build documentation
-        run: poetry run pdoc vi -o ./public -e vi=https://github.com/m-rots/violet/blob/main/vi/ -t templates
+        run: pdm run pdoc vi -o ./public -e vi=https://github.com/m-rots/violet/blob/main/vi/ -t templates
 
       - name: Publish to Pages
         uses: cloudflare/wrangler-action@2.0.0

@@ -148,7 +148,6 @@ Now, there's way more to explore.
 But this should give you an impression on how to change the behaviour of your agents with Violet.
 Explore some of the modules on the left and experiment away!
 """
-
 from dataclasses import dataclass
 
 from pygame.math import Vector2
