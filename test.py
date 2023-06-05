@@ -8,4 +8,5 @@ from vi import Agent, Simulation
     .batch_spawn_agents(100, Agent, images=["examples/images/white.png"])
     # Step 3: Profit! 🎉
     .run()
+    # tes test
 )
