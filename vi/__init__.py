@@ -156,6 +156,7 @@ from serde.se import serialize
 
 from .agent import Agent
 from .config import Config, Matrix, Window
+from .metrics import Fps, Metrics
 from .proximity import ProximityIter
 from .replay import TimeMachine
 from .simulation import HeadlessSimulation, Simulation
@@ -170,6 +171,10 @@ __all__ = [
     "Config",
     "Matrix",
     "Window",
+
+    # metrics
+    "Fps",
+    "Metrics",
 
     # proximity
     "ProximityIter",

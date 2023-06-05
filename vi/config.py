@@ -17,6 +17,7 @@ __all__ = [
     "Window"
 ]
 
+
 def _embiggen(input_list: list[Any], copies: int):
     """The in-place deep-copy variant of list multiplication."""
 

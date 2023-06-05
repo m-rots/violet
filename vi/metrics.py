@@ -189,6 +189,7 @@ import polars as pl
 
 
 __all__ = [
+    "Fps",
     "Metrics",
 ]
 
