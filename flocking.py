@@ -1,5 +1,6 @@
 from enum import Enum, auto
 
+import math
 import pygame as pg
 from pygame.math import Vector2
 from vi import Agent, Simulation, deserialize
