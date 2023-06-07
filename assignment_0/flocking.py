@@ -47,6 +47,14 @@ class Bird(Agent):
         else:
             alignment = Vector2((0,0))
         
+        # Seperation
+        positions = Vector2() 
+        for boid, _ in birds: # birds is a tuple containing the bird and the distance, we don't need the distance so _
+            positions += self.pos - boid.pos
+
+        if len(birds) > 0:
+            seperation = positions/len(birds) 
+
         self.pos += self.move
 
         #END CODE -----------------
