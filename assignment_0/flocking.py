@@ -38,6 +38,9 @@ class Bird(Agent):
         
         birds = list(self.in_proximity_accuracy()) # All birds in de proximity
 
+        if len(birds) == 0:
+            self.pos += self.move
+
         # Alignment
         velocities = Vector2() 
         for boid, _ in birds: # birds is a tuple containing the bird and the distance, we don't need the distance so _
@@ -46,16 +49,18 @@ class Bird(Agent):
         if len(birds) > 0:
             Vn = velocities/len(birds) 
             alignment = Vn - self.move 
+            alignment = alignment.normalize()
         else:
             alignment = Vector2((0,0))
         
         # Seperation
         positions = Vector2() 
         for boid, _ in birds: # birds is a tuple containing the bird and the distance, we don't need the distance so _
-            positions += self.pos - boid.pos
+            positions += (self.pos - boid.pos)
 
         if len(birds) > 0:
             seperation = positions/len(birds) 
+            seperation = seperation.normalize()
         else:
             seperation = Vector2((0,0))
 
@@ -65,34 +70,35 @@ class Bird(Agent):
             average_position += boid.pos
         
         if len(birds) > 0:
-            cohesion = average_position/len(birds) 
-            cohesion = average_position - self.pos - self.move
+            avg = average_position/len(birds) 
+            cohesion = (avg - self.pos) - self.move
+            cohesion = cohesion.normalize()
         else:
             cohesion = Vector2((0,0))
 
-        # Adding everything together
-        a_weight, c_weight, s_weight = self.config.weights()
-        max_velocity = 2
-        
-        Ftotal = ((s_weight * seperation) + (a_weight * alignment) + (c_weight * cohesion)) # epsilon is beetje random bewegen
-        self.move += Ftotal
+        if len(birds) > 1:
+            # Adding everything together
+            a_weight, c_weight, s_weight = self.config.weights()
 
-        if self.move.length() > max_velocity:
-            self.move = self.move.normalize() * max_velocity
+            max_velocity = 2
+            
+            Ftotal = ((s_weight * seperation) + (a_weight * alignment) + (c_weight * cohesion)) # epsilon is beetje random bewegen
+            self.move += Ftotal
 
+            if self.move.length() > max_velocity:
+                self.move = self.move.normalize() * max_velocity
+    
+        # changed = self.there_is_no_escape()
 
-        
-        
-        changed = self.there_is_no_escape()
+        # prng = self.shared.prng_move
 
-        prng = self.shared.prng_move
+        # # Always calculate the random angle so a seed could be used.
+        # deg = prng.uniform(-30, 30)
 
-        # Always calculate the random angle so a seed could be used.
-        deg = prng.uniform(-30, 30)
-
-        # Only update angle if the agent was teleported to a different area of the simulation.
-        if changed:
-            self.move.rotate_ip(deg)
+        # # Only update angle if the agent was teleported to a different area of the simulation.
+        # if changed:
+        #     self.move.rotate_ip(deg)
+        print(self.move)
 
         self.pos += self.move
 
