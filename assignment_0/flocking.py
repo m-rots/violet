@@ -62,10 +62,13 @@ class Bird(Agent):
         # Cohesion
         average_position = Vector2((0,0))
         for boid, _ in birds:
-            average_position += boid.pos / len(birds)
-
-        cohesion = average_position - self.pos - self.move
-
+            average_position += boid.pos
+        
+        if len(birds) > 0:
+            cohesion = average_position/len(birds) 
+            cohesion = average_position - self.pos - self.move
+        else:
+            cohesion = Vector2((0,0))
 
         # Adding everything together
         a_weight, c_weight, s_weight = self.config.weights()
@@ -76,6 +79,9 @@ class Bird(Agent):
 
         if self.move.length() > max_velocity:
             self.move = self.move.normalize() * max_velocity
+
+
+        
         
         changed = self.there_is_no_escape()
 
@@ -138,7 +144,7 @@ class FlockingLive(Simulation):
         FlockingConfig(
             image_rotation=True,
             movement_speed=1,
-            radius=5,
+            radius=50,
             seed=1,
         )
     )
