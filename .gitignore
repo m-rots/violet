@@ -9,9 +9,6 @@ pyrightconfig.json
 *.ipc
 *.parquet
 
-*.png
-!/examples/images/*.png
-
 # Build Output
 build
 dist
