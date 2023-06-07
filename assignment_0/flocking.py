@@ -108,7 +108,7 @@ class FlockingLive(Simulation):
             seed=1,
         )
     )
-    .batch_spawn_agents(50, Bird, images=["violet/assignment 0/images/bird.png", "violet/assignment 0/images/red.png"])
+    .batch_spawn_agents(50, Bird, images=["violet/assignment_0/images/bird.png", "violet/assignment_0/images/red.png"])
     .run()
 )
 
