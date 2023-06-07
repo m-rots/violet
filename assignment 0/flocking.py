@@ -44,7 +44,7 @@ class Bird(Agent):
         for boid, _ in birds: # birds is a tuple containing the bird and the distance, we don't need the distance so _
             velocities += boid.move 
         
-        if len(birds) >= 0:
+        if len(birds) > 0:
             Vn = velocities/len(birds) 
             alignment = Vn - self.move 
         else:
