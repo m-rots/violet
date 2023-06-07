@@ -36,9 +36,6 @@ class Bird(Agent):
         
         birds = list(self.in_proximity_accuracy()) # All birds in de proximity
 
-        if len(birds) == 0: # Wandering
-            self.pos += self.move
-
         # Alignment
         velocities = Vector2() 
         for boid, _ in birds: # birds is a tuple containing the bird and the distance, we don't need the distance so _
@@ -48,10 +45,9 @@ class Bird(Agent):
             Vn = velocities/len(birds) 
             alignment = Vn - self.move 
         else:
-            alignment = 0
-
-
-
+            alignment = Vector2((0,0))
+        
+        self.pos += self.move
 
         #END CODE -----------------
         
