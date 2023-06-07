@@ -1,5 +1,5 @@
 from enum import Enum, auto
-
+import random
 import pygame as pg
 from pygame.math import Vector2
 from vi import Agent, Simulation
@@ -23,6 +23,7 @@ class FlockingConfig(Config):
 
 class Bird(Agent):
     config: FlockingConfig
+    self.mass = random.randint(1, FlockingConfig().mass)
     
 
     def get_alignment_weigth(self ) -> float :
@@ -56,6 +57,15 @@ class Bird(Agent):
             seperation = positions/len(birds) 
         else:
             seperation = Vector2((0,0))
+
+        # Cohesion
+        average_position = Vector2((0,0))
+        for boid, _ in birds:
+            average_position += boid.pos / len(birds)
+
+        cohesion = average_position - self.pos - self.move
+
+        self.move = (cohesion + alighnment + separation) / self.mass
 
         # Adding everything together
         a_weight, c_weight, s_weight = self.config.weights()
