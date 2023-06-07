@@ -44,11 +44,14 @@ class Bird(Agent):
         for boid, _ in birds: # birds is a tuple containing the bird and the distance, we don't need the distance so _
             velocities += boid.move 
         
-        Vn = velocities/len(birds) 
-        alignment = Vn - self.move 
+        if len(birds) >= 0:
+            Vn = velocities/len(birds) 
+            alignment = Vn - self.move 
+        else:
+            alignment = 0
 
 
-        
+
 
         #END CODE -----------------
         
@@ -109,7 +112,7 @@ class FlockingLive(Simulation):
             seed=1,
         )
     )
-    .batch_spawn_agents(50, Bird, images=["images/bird.png", "images/red.png"])
+    .batch_spawn_agents(50, Bird, images=["violet/assignment 0/images/bird.png", "violet/assignment 0/images/red.png"])
     .run()
 )
 
