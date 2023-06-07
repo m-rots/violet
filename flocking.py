@@ -23,20 +23,31 @@ class FlockingConfig(Config):
 
 class Bird(Agent):
     config: FlockingConfig
+    
+
+    def get_alignment_weigth(self ) -> float :
+        return self.config.alignment_weight
+
 
     def change_position(self):
         # Pac-man-style teleport to the other end of the screen when trying to escape
         self.there_is_no_escape()
         #YOUR CODE HERE -----------
+        
+        self.pos += self.move
+        
 
         #END CODE -----------------
         
     def update(self):
-         if self.in_proximity_accuracy().count() >= 2:
+         if self.in_proximity_accuracy().count() >= 3:
              self.change_image(1)
          else:
              self.change_image(0)
 
+
+# my_bird = Bird()
+# my_bird.get_alignment_weigth()
 
 class Selection(Enum):
     ALIGNMENT = auto()
@@ -85,7 +96,7 @@ class FlockingLive(Simulation):
             seed=1,
         )
     )
-    .batch_spawn_agents(50, Bird, images=["images/bird.png", "images/medium-bird.png"])
+    .batch_spawn_agents(50, Bird, images=["images/bird.png", "images/red.png"])
     .run()
 )
 
