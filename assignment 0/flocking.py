@@ -34,7 +34,20 @@ class Bird(Agent):
         self.there_is_no_escape()
         #YOUR CODE HERE -----------
         
-        self.pos += self.move
+        birds = list(self.in_proximity_accuracy()) # All birds in de proximity
+
+        if len(birds) == 0: # Wandering
+            self.pos += self.move
+
+        # Alignment
+        velocities = Vector2() 
+        for boid, _ in birds: # birds is a tuple containing the bird and the distance, we don't need the distance so _
+            velocities += boid.move 
+        
+        Vn = velocities/len(birds) 
+        alignment = Vn - self.move 
+
+
         
 
         #END CODE -----------------
