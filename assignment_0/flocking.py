@@ -54,6 +54,18 @@ class Bird(Agent):
 
         if len(birds) > 0:
             seperation = positions/len(birds) 
+        else:
+            seperation = Vector2((0,0))
+
+        # Adding everything together
+        a_weight, c_weight, s_weight = self.config.weights()
+        max_velocity = 2
+        
+        Ftotal = (s_weight* seperation) + (a_weight * alignment) #(c_weight * cohesion)) / mass # epsilon is beetje random bewegen
+        self.move += Ftotal
+
+        if self.move.length() > max_velocity:
+            self.move = self.move.normalize() * max_velocity
 
         self.pos += self.move
 
@@ -65,9 +77,6 @@ class Bird(Agent):
          else:
              self.change_image(0)
 
-
-# my_bird = Bird()
-# my_bird.get_alignment_weigth()
 
 class Selection(Enum):
     ALIGNMENT = auto()
@@ -104,7 +113,7 @@ class FlockingLive(Simulation):
                     self.selection = Selection.SEPARATION
 
         a, c, s = self.config.weights()
-        print(f"A: {a:.1f} - C: {c:.1f} - S: {s:.1f}")
+        # print(f"A: {a:.1f} - C: {c:.1f} - S: {s:.1f}")
 
 
 (
