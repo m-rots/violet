@@ -4,6 +4,7 @@ import pygame as pg
 from pygame.math import Vector2
 from vi import Agent, Simulation
 from vi.config import Config, dataclass, deserialize
+import random
 
 
 @deserialize
@@ -15,16 +16,16 @@ class FlockingConfig(Config):
 
     delta_time: float = 3
 
-    mass: int = 20
-
     def weights(self) -> tuple[float, float, float]:
         return (self.alignment_weight, self.cohesion_weight, self.separation_weight)
 
 
 class Bird(Agent):
     config: FlockingConfig
-    self.mass = random.randint(1, FlockingConfig().mass)
-    
+
+    mass = random.randint(10, 25)
+
+    # super.mass = random.randint(1, FlockingConfig().mass)
 
     def get_alignment_weigth(self ) -> float :
         return self.config.alignment_weight
@@ -65,29 +66,33 @@ class Bird(Agent):
 
         cohesion = average_position - self.pos - self.move
 
-        self.move = (cohesion + alighnment + separation) / self.mass
 
         # Adding everything together
         a_weight, c_weight, s_weight = self.config.weights()
         max_velocity = 2
         
-        Ftotal = (s_weight* seperation) + (a_weight * alignment) #(c_weight * cohesion)) / mass # epsilon is beetje random bewegen
+        Ftotal = ((s_weight * seperation) + (a_weight * alignment) + (c_weight * cohesion)) # epsilon is beetje random bewegen
         self.move += Ftotal
 
         if self.move.length() > max_velocity:
             self.move = self.move.normalize() * max_velocity
+        
+        changed = self.there_is_no_escape()
+
+        prng = self.shared.prng_move
+
+        # Always calculate the random angle so a seed could be used.
+        deg = prng.uniform(-30, 30)
+
+        # Only update angle if the agent was teleported to a different area of the simulation.
+        if changed:
+            self.move.rotate_ip(deg)
 
         self.pos += self.move
 
         #TEST
 
         #END CODE -----------------
-        
-    def update(self):
-         if self.in_proximity_accuracy().count() >= 3:
-             self.change_image(1)
-         else:
-             self.change_image(0)
 
 
 class Selection(Enum):
@@ -133,7 +138,7 @@ class FlockingLive(Simulation):
         FlockingConfig(
             image_rotation=True,
             movement_speed=1,
-            radius=50,
+            radius=5,
             seed=1,
         )
     )
