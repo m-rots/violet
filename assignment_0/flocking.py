@@ -57,6 +57,8 @@ class Bird(Agent):
 
         self.pos += self.move
 
+        #TEST
+
         #END CODE -----------------
         
     def update(self):
