@@ -75,16 +75,20 @@ class Agent(Sprite):
     """The area in which the agent is free to move."""
 
     move: Vector2
-    """A two-dimensional vector representing the delta between its current and next position.
+    """A two-dimensional vector representing the delta between the agent's current and next position. 
+    In collective intelligence scenarios, it represents the agent's velocity.
 
     Note that `move` isn't added to the agent's `pos` automatically.
     Instead, you should manually add the move delta to `pos`, like so:
 
-    >>> self.pos += self.move
+    >>> self.pos += self.move * delta_time
 
-    The vector `Vector2(2, 1)` indicates that the agent will be moving 2 pixels along the x axis
-    and 1 pixel along the y axis.
-    You can use the `Vector2` class to calculate the agent's velocity by calling `length`.
+    Where `delta_time` is the time elapsed during the movement (usually user defined).
+    Read https://gafferongames.com/post/integration_basics/ to learn more about it. 
+
+    Declaring move as `Vector2(2, 1)` indicates that the agent will be moving 2 pixels along the x axis and
+    1 pixel along the y axis. You can use the `Vector2` class to calculate its magnitude by calling `length`
+    which returns the speed or rate of change of the agent's position for collective intelligence scenarios.
 
     This property is also used to automatically rotate the agent's image
     when `vi.config.Schema.image_rotation` is enabled.
