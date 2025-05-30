@@ -11,6 +11,9 @@ from typing_extensions import TypeVar
 
 
 __all__ = [
+    "deserialize",
+    "serialize",
+    "from_toml",
     "dataclass",
     "Config",
     "ConfigClass",
