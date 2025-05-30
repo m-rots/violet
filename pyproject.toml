@@ -1,19 +1,15 @@
-[build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
-
 [project]
 name = "violet-simulator"
-version = "0.2.4"
+version = "0.2.5"
 description = "A smol simulator framework built on top of PyGame"
 requires-python = ">=3.9"
 readme = "README.md"
-license = { text = "MIT" }
+license = "MIT"
 dependencies = [
-    "pygame>=2.4.0",
-    "polars>=0.17.11",
-    "pyserde[toml]>=0.10.4",
-    "typing-extensions>=4.5.0",
+    "pygame~=2.6",
+    "polars~=1.2",
+    "pyserde[toml]~=0.24",
+    "typing-extensions~=4.12",
 ]
 
 [[project.authors]]
@@ -25,13 +21,16 @@ homepage = "https://violet.m-rots.com"
 repository = "https://github.com/m-rots/violet"
 documentation = "https://api.violet.m-rots.com/vi"
 
-[tool.pdm.build]
-includes = ["vi"]
+[build-system]
+requires = ["uv_build>=0.7.8,<0.8.0"]
+build-backend = "uv_build"
 
-[tool.pdm.dev-dependencies]
-dev = [
-    "pdoc>=13.1.1",
-]
+[tool.uv.build-backend]
+module-name = "vi"
+module-root = ""
+
+[dependency-groups]
+dev = ["pdoc~=15.0"]
 
 [tool.pyright]
 include = ["examples", "vi"]
@@ -41,18 +40,23 @@ typeCheckingMode = "strict"
 ignore = ["E501"]
 select = [
     # Hugging face rules
-    "C", "E", "F", "I", "W",
+    "C",
+    "E",
+    "F",
+    "I",
+    "W",
     # Pandas rules
     "YTT",
     "B",
     "Q",
-    "PLE", "PLR", "PLW",
+    "PLE",
+    "PLR",
+    "PLW",
     "PIE",
     "PYI",
     "TID",
     "ISC",
-    "TCH",
-    "C4"
+    "C4",
 ]
 
 [tool.ruff.per-file-ignores]

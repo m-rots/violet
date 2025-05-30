@@ -17,14 +17,14 @@ Check out the [Violet Starter Kit](https://github.com/m-rots/violet-starter-kit)
 
 Install the latest version of Violet with:
 
-```bash
+```sh
 pip3 install -U violet-simulator
 ```
 
-Or with [PDM](https://pdm.fming.dev):
+Or with [uv](https://docs.astral.sh/uv/):
 
-```bash
-pdm add violet-simulator
+```sh
+uv add violet-simulator
 ```
 
 ## Example
