@@ -8,7 +8,7 @@ class Player(Agent):
     # Our human-controllable player shouldn't inherit the Agent's default wandering movement.
     # Therefore, we override the `change_position` method with our own,
     # where we check which key is pressed to move in that direction.
-    def change_position(self):
+    def change_position(self) -> None:
         keys = pg.key.get_pressed()
         if keys[pg.K_DOWN] or keys[pg.K_s]:
             self.pos.y += 2
@@ -21,7 +21,7 @@ class Player(Agent):
 
     # While we don't have to add additional logic for the behaviour of our Player,
     # we do want to visualise the `radius` of who our Player can see.
-    def update(self):
+    def update(self) -> None:
         screen = pg.display.get_surface()
         radius = self.config.radius
         x, y = self.center
@@ -35,7 +35,7 @@ class Proxyman(Agent):
     # We want the non-player agents to indicate whether they see our Player.
     # So when we see that a Player is in the set of agents that are in proximity,
     # then we want our agent to turn green. Otherwise they stay white.
-    def update(self):
+    def update(self) -> None:
         player = (
             self.in_proximity_accuracy().without_distance().filter_kind(Player).first()
         )  #                      👆 see what happens if you change it to performance.

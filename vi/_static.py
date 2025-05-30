@@ -27,7 +27,7 @@ class _StaticSprite(Sprite):
     def __init__(
         self,
         containers: list[Group[Any]],
-        id: int,
+        id: int,  # noqa: A002
         image: Surface,
         pos: Vector2,
     ) -> None:

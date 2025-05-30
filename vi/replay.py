@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import pygame as pg
 
@@ -37,8 +37,8 @@ class TimeMachine:
         self,
         history: DataFrame,
         image_paths: list[str],
-        window: Optional[Window] = None,
-    ):
+        window: Window | None = None,
+    ) -> None:
         pg.display.init()
 
         # Convert multiple series (one per column) into one series of structs
@@ -58,7 +58,7 @@ class TimeMachine:
         # Initialise the clock. Used to cap FPS.
         self.clock = pg.time.Clock()
 
-    def tick(self):
+    def tick(self) -> None:
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 self.running = False
@@ -97,7 +97,7 @@ class TimeMachine:
         pg.display.flip()
         self.clock.tick(60)
 
-    def run(self):
+    def run(self) -> None:
         self.running = True
         while self.running:
             self.tick()
