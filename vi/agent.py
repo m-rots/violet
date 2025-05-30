@@ -97,10 +97,10 @@ class Agent(Sprite):
     pos: Vector2
     """The current (centre) position of the agent."""
 
-    _obstacles: Group
+    _obstacles: Group[Any]
     """The group of obstacles the agent can collide with."""
 
-    _sites: Group
+    _sites: Group[Any]
     """The group of sites on which the agent can appear."""
 
     __simulation: HeadlessSimulation
