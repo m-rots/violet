@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import pygame as pg
 from pygame.sprite import Group, Sprite
@@ -22,7 +22,11 @@ class _StaticSprite(Sprite):
     mask: Mask
 
     def __init__(
-        self, containers: list[Group], id: int, image: Surface, pos: Vector2
+        self,
+        containers: list[Group[Any]],
+        id: int,
+        image: Surface,
+        pos: Vector2,
     ) -> None:
         Sprite.__init__(self, *containers)
 

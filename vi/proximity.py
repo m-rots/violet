@@ -3,6 +3,7 @@ from __future__ import annotations
 import collections
 from typing import (
     TYPE_CHECKING,
+    Any,
     Callable,
     Generator,
     Generic,
@@ -242,7 +243,7 @@ class ProximityIter(Generic[T]):
 
 
 class ProximityEngine:
-    __agents: Group
+    __agents: Group[Any]
 
     __chunks: dict[tuple[int, int], set[Agent]]
     """A map between chunk locations and the agents currently in that chunk."""
@@ -253,7 +254,7 @@ class ProximityEngine:
     radius: int
     """The radius representing the agent's proximity view."""
 
-    def __init__(self, agents: Group, radius: int):
+    def __init__(self, agents: Group[Any], radius: int):
         self.__agents = agents
         self.__chunks = collections.defaultdict(set)
 

@@ -40,7 +40,7 @@ from __future__ import annotations
 
 import random
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional, Type, TypeVar
+from typing import TYPE_CHECKING, Any, Type
 
 import pygame as pg
 from pygame.gfxdraw import hline, vline
@@ -134,10 +134,10 @@ class HeadlessSimulation:
     _area: pg.rect.Rect
 
     # Sprite Groups
-    _all: pg.sprite.Group
-    _agents: pg.sprite.Group
-    _obstacles: pg.sprite.Group
-    _sites: pg.sprite.Group
+    _all: pg.sprite.Group[Any]
+    _agents: pg.sprite.Group[Any]
+    _obstacles: pg.sprite.Group[Any]
+    _sites: pg.sprite.Group[Any]
 
     _next_agent_id: int = 0
     """The agent identifier to be given next."""
