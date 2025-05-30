@@ -1,5 +1,4 @@
-"""
-Creating a new `Simulation` is as simple as adding two lines of code to a Python file:
+"""Creating a new `Simulation` is as simple as adding two lines of code to a Python file:
 
 >>> from vi import Simulation
 >>> Simulation().run()
@@ -34,13 +33,13 @@ Violet refers to this as Headless Mode.
 
 Headless Mode allows you to run your simulation a bit faster by not calling any rendering-related code.
 To activate Headless Mode, simply swap `Simulation` for `HeadlessSimulation` and your GPU should now remain idle!
-"""
+"""  # noqa: D415
 
 from __future__ import annotations
 
 import random
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Generic, Type
+from typing import TYPE_CHECKING, Any, Generic
 
 import pygame as pg
 from pygame.gfxdraw import hline, vline
@@ -167,7 +166,7 @@ class HeadlessSimulation(Generic[ConfigClass]):
     Each agent produces a Snapshot at every frame in the simulation.
     """
 
-    def __init__(self, config: ConfigClass):
+    def __init__(self, config: ConfigClass) -> None:
         self.config = config
         self._metrics = Metrics()
 
@@ -175,7 +174,7 @@ class HeadlessSimulation(Generic[ConfigClass]):
         random.seed(self.config.seed)
 
         # Using a custom generator for agent movement
-        prng_move = random.Random()
+        prng_move = random.Random()  # noqa: S311
         prng_move.seed(self.config.seed)
 
         self.shared = Shared(prng_move=prng_move)
@@ -195,14 +194,13 @@ class HeadlessSimulation(Generic[ConfigClass]):
     def batch_spawn_agents(
         self,
         count: int,
-        agent_class: Type[Agent[ConfigClass]],
+        agent_class: type[Agent[ConfigClass]],
         images: list[str],
     ) -> Self:
         """Spawn multiple agents into the simulation.
 
         Examples
         --------
-
         Spawn 100 `vi.agent.Agent`'s into the simulation with `examples/images/white.png` as image.
 
         >>> (
@@ -210,8 +208,8 @@ class HeadlessSimulation(Generic[ConfigClass]):
         ...     .batch_spawn_agents(100, Agent, ["examples/images/white.png"])
         ...     .run()
         ... )
-        """
 
+        """
         # Load images once so the files don't have to be read multiple times.
         loaded_images = self._load_images(images)
 
@@ -222,7 +220,7 @@ class HeadlessSimulation(Generic[ConfigClass]):
 
     def spawn_agent(
         self,
-        agent_class: Type[Agent[ConfigClass]],
+        agent_class: type[Agent[ConfigClass]],
         images: list[str],
     ) -> Self:
         """Spawn one agent into the simulation.
@@ -233,7 +231,6 @@ class HeadlessSimulation(Generic[ConfigClass]):
 
         Examples
         --------
-
         Spawn a single `vi.agent.Agent` into the simulation with `examples/images/white.png` as image:
 
         >>> (
@@ -241,8 +238,8 @@ class HeadlessSimulation(Generic[ConfigClass]):
         ...     .spawn_agent(Agent, ["examples/images/white.png"])
         ...     .run()
         ... )
-        """
 
+        """
         agent_class(images=self._load_images(images), simulation=self)
 
         return self
@@ -254,7 +251,6 @@ class HeadlessSimulation(Generic[ConfigClass]):
 
         Examples
         --------
-
         Spawn a single obstacle into the simulation with `examples/images/bubble-full.png` as image.
         In addition, we place the obstacle in the centre of our window.
 
@@ -265,8 +261,8 @@ class HeadlessSimulation(Generic[ConfigClass]):
         ...     .spawn_obstacle("examples/images/bubble-full.png", x // 2, y // 2)
         ...     .run()
         ... )
-        """
 
+        """
         _StaticSprite(
             containers=[self._all, self._obstacles],
             id=self._obstacle_id(),
@@ -281,7 +277,6 @@ class HeadlessSimulation(Generic[ConfigClass]):
 
         Examples
         --------
-
         Spawn a single site into the simulation with `examples/images/site.png` as image.
         In addition, we give specific coordinates where the site should be placed.
 
@@ -290,8 +285,8 @@ class HeadlessSimulation(Generic[ConfigClass]):
         ...     .spawn_site("examples/images/site.png", x=375, y=375)
         ...     .run()
         ... )
-        """
 
+        """
         _StaticSprite(
             containers=[self._all, self._sites],
             id=self._site_id(),
@@ -303,7 +298,6 @@ class HeadlessSimulation(Generic[ConfigClass]):
 
     def run(self) -> Metrics:
         """Run the simulation until it's ended by closing the window or when the `vi.config.Schema.duration` has elapsed."""
-
         self._running = True
 
         while self._running:
@@ -311,7 +305,7 @@ class HeadlessSimulation(Generic[ConfigClass]):
 
         return self._metrics
 
-    def before_update(self):
+    def before_update(self) -> None:
         """Run any code before the agents are updated in every tick.
 
         You should override this method when inheriting Simulation to add your own logic.
@@ -320,14 +314,10 @@ class HeadlessSimulation(Generic[ConfigClass]):
         - Processing events from PyGame's event queue.
         """
 
-        ...
+    def after_update(self) -> None: ...
 
-    def after_update(self):
-        ...
-
-    def tick(self):
+    def tick(self) -> None:
         """Advance the simulation with one tick."""
-
         self.before_update()
 
         # Update the position of all agents
@@ -358,27 +348,24 @@ class HeadlessSimulation(Generic[ConfigClass]):
 
         self.shared.counter += 1
 
-    def stop(self):
+    def stop(self) -> None:
         """Stop the simulation.
 
         The simulation isn't stopped directly.
         Instead, the current tick is completed, after which the simulation will end.
         """
-
         self._running = False
 
-    def __collect_replay_data(self):
+    def __collect_replay_data(self) -> None:
         """Collect the replay data for all agents."""
-
         for sprite in self._agents:
-            agent: Agent = sprite  # type: ignore
+            agent: Agent = sprite
             agent._collect_replay_data()
 
-    def __update_positions(self):
+    def __update_positions(self) -> None:
         """Update the position of all agents."""
-
         for sprite in self._agents.sprites():
-            agent: Agent = sprite  # type: ignore
+            agent: Agent = sprite
             agent.change_position()
 
     def _load_image(self, path: str) -> pg.surface.Surface:
@@ -407,9 +394,7 @@ class HeadlessSimulation(Generic[ConfigClass]):
 
 
 class Simulation(Generic[ConfigClass], HeadlessSimulation[ConfigClass]):
-    """
-    This class offers the same functionality as `HeadlessSimulation`,
-    but adds logic to automatically draw all agents, obstacles and sites to your screen.
+    """Offers the same functionality as `HeadlessSimulation`, but adds logic to automatically draw all agents, obstacles and sites to your screen.
 
     If a custom config isn't provided when creating the simulation, the default values of `Config` will be used instead.
     """
@@ -418,7 +403,7 @@ class Simulation(Generic[ConfigClass], HeadlessSimulation[ConfigClass]):
     _clock: pg.time.Clock
     _screen: pg.surface.Surface
 
-    def __init__(self, config: ConfigClass):
+    def __init__(self, config: ConfigClass) -> None:
         super().__init__(config)
 
         pg.display.init()
@@ -438,7 +423,7 @@ class Simulation(Generic[ConfigClass], HeadlessSimulation[ConfigClass]):
         # Initialise the clock. Used to cap FPS.
         self._clock = pg.time.Clock()
 
-    def before_update(self):
+    def before_update(self) -> None:
         rebound: list[Event] = []
         for event in pg.event.get(eventtype=[pg.QUIT, pg.KEYDOWN]):
             if event.type == pg.QUIT:
@@ -460,7 +445,7 @@ class Simulation(Generic[ConfigClass], HeadlessSimulation[ConfigClass]):
         self._all.clear(self._screen, self._background)
         self._screen.blit(self._background, (0, 0))
 
-    def after_update(self):
+    def after_update(self) -> None:
         # Draw everything to the screen
         self._all.draw(self._screen)
 
@@ -477,11 +462,10 @@ class Simulation(Generic[ConfigClass], HeadlessSimulation[ConfigClass]):
             self._metrics.fps._push(current_fps)
 
             if self.config.print_fps:
-                print(f"FPS: {current_fps:.1f}")
+                print(f"FPS: {current_fps:.1f}")  # noqa: T201
 
-    def __visualise_chunks(self):
+    def __visualise_chunks(self) -> None:
         """Visualise the proximity chunks by drawing their borders."""
-
         colour = pg.Color(255, 255, 255, 122)
         chunk_size = self._proximity.chunk_size
 

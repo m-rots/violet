@@ -2,41 +2,41 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import dataclass, field
-from typing import Any, Generic, Optional, Type, Union
+from pathlib import Path
+from typing import Any, Generic, TypeGuard
 
 from serde.de import deserialize
 from serde.se import serialize
 from serde.toml import from_toml
-from typing_extensions import TypeGuard, TypeVar
+from typing_extensions import Self, TypeVar
 
 
 __all__ = [
-    "deserialize",
-    "serialize",
-    "from_toml",
-    "dataclass",
     "Config",
     "ConfigClass",
     "Matrix",
     "Schema",
-    "Window"
+    "Window",
+    "dataclass",
+    "deserialize",
+    "from_toml",
+    "serialize",
 ]
 
 
-def _embiggen(input_list: list[Any], copies: int):
+def _embiggen(input_list: list[Any], copies: int) -> None:
     """The in-place deep-copy variant of list multiplication."""
-
     head = input_list[:]
 
     for _ in range(copies - 1):
         input_list.extend(deepcopy(head))
 
 
-def _is_list(obj: Any) -> TypeGuard[list[Any]]:
+def _is_list(obj: Any) -> TypeGuard[list[Any]]:  # noqa: ANN401
     return isinstance(obj, list)
 
 
-def _matrixify(matrix: dict[str, Union[Any, list[Any]]]) -> list[dict[str, Any]]:
+def _matrixify(matrix: dict[str, Any | list[Any]]) -> list[dict[str, Any]]:  # noqa: C901
     combinations: list[dict[str, Any]] = []
 
     for key, values in matrix.items():
@@ -49,8 +49,7 @@ def _matrixify(matrix: dict[str, Union[Any, list[Any]]]) -> list[dict[str, Any]]
         if len(combinations) == 0:
             # Multiple values
             if _is_list(values):
-                for value in values:
-                    combinations.append({key: value})
+                combinations.extend({key: value} for value in values)
 
             # Single value
             elif values is not None:
@@ -88,7 +87,7 @@ class Window:
     """The height of the simulation window in pixels."""
 
     @classmethod
-    def square(cls, size: int):
+    def square(cls, size: int) -> Self:
         return cls(width=size, height=size)
 
     def as_tuple(self) -> tuple[int, int]:
@@ -119,7 +118,6 @@ class Schema(Generic[MatrixInt, MatrixFloat]):
 
     Examples
     --------
-
     To build your own `Matrix`, you first want to create a `Schema` with the configuration options that you want to add.
     For this example, let's say that we want to add an `infectability` option to our custom `Schema`.
     We want this infectability to be a `float`.
@@ -201,6 +199,7 @@ class Schema(Generic[MatrixInt, MatrixFloat]):
     >>> @dataclass
     ... class CovidMatrix(Matrix, CovidSchema[list[float], list[int]]):
     ...     #            MatrixInt is on the second position too 👆
+
     """
 
     id: int = 0
@@ -227,16 +226,16 @@ class Schema(Generic[MatrixInt, MatrixFloat]):
     and currently causes a bug where agents clip into obstacles.
     """
 
-    movement_speed: Union[float, MatrixFloat] = 0.5
+    movement_speed: float | MatrixFloat = 0.5
     """The per-frame movement speed of the agents."""
 
     print_fps: bool = False
     """Print the current number of frames-per-second in the terminal"""
 
-    radius: Union[int, MatrixInt] = 25
+    radius: int | MatrixInt = 25
     """The radius (in pixels) in which agents are considered to be in proximity."""
 
-    seed: Optional[Union[int, MatrixInt]] = None
+    seed: int | MatrixInt | None = None
     """The PRNG seed to use for the simulation.
 
     Defaults to `None`, indicating that no seed is used.
@@ -249,10 +248,9 @@ class Schema(Generic[MatrixInt, MatrixFloat]):
     """The simulation window"""
 
     @classmethod
-    def from_file(cls, file_name: str):
+    def from_file(cls, file_name: str) -> Self:
         """Load the config from a TOML file. The config doesn't have to include all attributes, only those which you want to override."""
-
-        with open(file_name, "r") as f:
+        with Path(file_name).open() as f:
             return from_toml(cls, f.read())
 
 
@@ -261,12 +259,12 @@ class Schema(Generic[MatrixInt, MatrixFloat]):
 @dataclass
 class Matrix(Schema[list[int], list[float]]):
     """`Matrix` is the `Config` class on steroids.
+
     It allows you to supply a list of values on certain configuration options,
     to automatically generate multiple unique `Config` instances.
 
     Examples
     --------
-
     Imagine that you want to research the effect of the `radius` parameter.
     Instead of only testing the default value of 25 pixels,
     you also want to test a radius of 10 and 50 pixels.
@@ -376,11 +374,11 @@ class Matrix(Schema[list[int], list[float]]):
     ...         df = pl.concat(p.map(run_simulation, configs))
     ...
     ...         print(df)
+
     """
 
-    def to_configs(self, config: Type[T]) -> list[T]:
+    def to_configs(self, config: type[T]) -> list[T]:
         """Generate a config for every unique combination of values in the matrix."""
-
         return [config(**values) for values in _matrixify(vars(self))]
 
 
@@ -392,7 +390,6 @@ class Config(Schema[int, float]):
 
     Examples
     --------
-
     If you want to change the proximity `radius` of your agents,
     you can create a new `Config` instance and pass a custom value for `radius`.
 
@@ -428,8 +425,8 @@ class Config(Schema[int, float]):
     ...     .batch_spawn_agents(100, MyAgent, ["examples/images/white.png"])
     ...     .run()
     ... )
+
     """
 
-    ...
 
 ConfigClass = TypeVar("ConfigClass", bound=Config, default=Config)

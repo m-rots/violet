@@ -4,7 +4,7 @@ from vi import Agent, Config, Simulation
 
 
 class MyAgent(Agent):
-    def update(self):
+    def update(self) -> None:
         # As accurate proximity calculation is quite performance heavy,
         # we only calculate it once per frame.
         in_radius = self.in_proximity_accuracy().count()
@@ -38,5 +38,5 @@ print(
     .agg((pl.col("in_radius") > 0).sum().alias("# red agents"))
     .select("# red agents")
     # Create a statistical summary including the min, mean and max number of red agents.
-    .describe()
+    .describe(),
 )

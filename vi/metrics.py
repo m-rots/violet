@@ -1,5 +1,4 @@
-"""
-Violet automatically collects the following data for every agent on every frame of the simulation:
+"""Violet automatically collects the following data for every agent on every frame of the simulation:
 
 - The current frame of the simulation
 - The agent's identifier
@@ -177,7 +176,7 @@ Of course, you can also save boolean values directly.
 >>> class Bob(Agent):
 ...     def update(self):
 ...         self.save_data("on_site", self.on_site())
-"""
+"""  # noqa: D415
 
 from __future__ import annotations
 
@@ -198,7 +197,7 @@ __all__ = [
 class Fps:
     _fps: list[float] = field(default_factory=list[float])
 
-    def _push(self, fps: float):
+    def _push(self, fps: float) -> None:
         self._fps.append(fps)
 
     def to_polars(self) -> pl.Series:
@@ -218,14 +217,14 @@ class Metrics:
     snapshots: pl.DataFrame
     """The [Polars DataFrame](https://pola-rs.github.io/polars-book/user-guide/quickstart/intro.html) containing the snapshot data of all agents over time."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.fps = Fps()
         self._temporary_snapshots = defaultdict(list)
         self.snapshots = pl.DataFrame()
 
-    def _merge(self):
-        df = pl.from_dict(self._temporary_snapshots)
+    def _merge(self) -> None:
+        snapshots = pl.from_dict(self._temporary_snapshots)
 
-        self.snapshots.vstack(df, in_place=True)
+        self.snapshots.vstack(snapshots, in_place=True)
 
         self._temporary_snapshots = defaultdict(list)

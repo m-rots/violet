@@ -1,5 +1,4 @@
-"""
-The Agent class is where all the magic happens!
+"""The Agent class is where all the magic happens!
 
 Inheriting the Agent class allows you to modify the behaviour of the agents in the simulation.
 """
@@ -7,7 +6,7 @@ Inheriting the Agent class allows you to modify the behaviour of the agents in t
 from __future__ import annotations
 
 from copy import copy
-from typing import TYPE_CHECKING, Any, Generator, Generic, Optional
+from typing import TYPE_CHECKING, Any, Generic
 
 import pygame as pg
 from pygame.math import Vector2
@@ -18,6 +17,8 @@ from .util import random_angle, random_pos, round_pos
 
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
+
     from pygame.mask import Mask
     from pygame.rect import Rect
     from pygame.surface import Surface
@@ -34,9 +35,7 @@ __all__ = [
 
 
 class Agent(Sprite, Generic[ConfigClass]):
-    """
-    The `Agent` class is home to Violet's various additions and is
-    built on top of [PyGame's Sprite](https://www.pygame.org/docs/ref/sprite.html) class.
+    """The `Agent` class is home to Violet's various additions and is built on top of [PyGame's Sprite](https://www.pygame.org/docs/ref/sprite.html) class.
 
     While you can simply add this `Agent` class to your simulations by calling `batch_spawn_agents`,
     the agents won't actually do anything interesting.
@@ -69,13 +68,13 @@ class Agent(Sprite, Generic[ConfigClass]):
     _image_index: int
     """The currently selected image."""
 
-    _image_cache: Optional[tuple[int, Surface]] = None
+    _image_cache: tuple[int, Surface] | None = None
 
     _area: Rect
     """The area in which the agent is free to move."""
 
     move: Vector2
-    """A two-dimensional vector representing the delta between the agent's current and next position. 
+    """A two-dimensional vector representing the delta between the agent's current and next position.
     In collective intelligence scenarios, it represents the agent's velocity.
 
     Note that `move` isn't added to the agent's `pos` automatically.
@@ -84,7 +83,7 @@ class Agent(Sprite, Generic[ConfigClass]):
     >>> self.pos += self.move * delta_time
 
     Where `delta_time` is the time elapsed during the movement (usually user defined).
-    Read https://gafferongames.com/post/integration_basics/ to learn more about it. 
+    Read https://gafferongames.com/post/integration_basics/ to learn more about it.
 
     Declaring move as `Vector2(2, 1)` indicates that the agent will be moving 2 pixels along the x axis and
     1 pixel along the y axis. You can use the `Vector2` class to calculate its magnitude by calling `length`
@@ -112,9 +111,9 @@ class Agent(Sprite, Generic[ConfigClass]):
         self,
         images: list[Surface],
         simulation: HeadlessSimulation[ConfigClass],
-        pos: Optional[Vector2] = None,
-        move: Optional[Vector2] = None,
-    ):
+        pos: Vector2 | None = None,
+        move: Vector2 | None = None,
+    ) -> None:
         Sprite.__init__(self, simulation._all, simulation._agents)
 
         self.__simulation = simulation
@@ -149,7 +148,12 @@ class Agent(Sprite, Generic[ConfigClass]):
             while True:
                 self.pos = random_pos(self._area, prng=self.shared.prng_move)
 
-                obstacle_hit = pg.sprite.spritecollideany(self, self._obstacles, pg.sprite.collide_mask)  # type: ignore
+                obstacle_hit = pg.sprite.spritecollideany(
+                    self,  # type: ignore[reportArgumentType]
+                    self._obstacles,
+                    pg.sprite.collide_mask,
+                )
+
                 if not bool(obstacle_hit) and self._area.contains(self.rect):
                     break
 
@@ -160,13 +164,12 @@ class Agent(Sprite, Generic[ConfigClass]):
             angle = self.move.angle_to(Vector2((0, -1)))
 
             return pg.transform.rotate(image, angle)
-        else:
-            return image
+
+        return image
 
     @property
     def image(self) -> Surface:
         """The read-only image that's used for PyGame's rendering."""
-
         if self._image_cache is not None:
             frame, image = self._image_cache
             if frame == self.shared.counter:
@@ -180,13 +183,11 @@ class Agent(Sprite, Generic[ConfigClass]):
     @property
     def center(self) -> tuple[int, int]:
         """The read-only centre position of the agent."""
-
         return round_pos(self.pos)
 
     @property
     def rect(self) -> Rect:
         """The read-only bounding-box that's used for PyGame's rendering."""
-
         rect = self.image.get_rect()
         rect.center = self.center
 
@@ -195,20 +196,18 @@ class Agent(Sprite, Generic[ConfigClass]):
     @property
     def mask(self) -> Mask:
         """A read-only bit-mask of the image used for collision detection with obstacles and sites."""
-
         return pg.mask.from_surface(self.image)
 
-    def update(self):
+    def update(self) -> None:
         """Run your own agent logic at every tick of the simulation.
-        Every frame of the simulation, this method is called automatically for every agent of the simulation.
 
+        Every frame of the simulation, this method is called automatically for every agent of the simulation.
         To add your own logic, inherit the `Agent` class and override this method with your own.
         """
 
-        ...
-
     def obstacle_intersections(
-        self, scale: float = 1
+        self,
+        scale: float = 1,
     ) -> Generator[Vector2, None, None]:
         """Retrieve the centre coordinates of all obstacle intersections.
 
@@ -229,7 +228,6 @@ class Agent(Sprite, Generic[ConfigClass]):
         A scale of 2 makes your agent twice as big,
         but only for calculating the intersecting bitmasks.
         """
-
         mask = pg.mask.from_surface(self.image)
 
         # Scale the mask to the desired size
@@ -241,7 +239,7 @@ class Agent(Sprite, Generic[ConfigClass]):
         rect.center = self.center
 
         for sprite in self._obstacles.sprites():
-            obstacle: _StaticSprite = sprite  # type: ignore
+            obstacle: _StaticSprite = sprite
 
             # Calculate the mask offset
             x = obstacle.rect.x - rect.x
@@ -250,7 +248,7 @@ class Agent(Sprite, Generic[ConfigClass]):
             overlap = mask.overlap_mask(obstacle.mask, offset=(x, y))
 
             # For some reason PyGame has the wrong type hint here (single instead of list)
-            overlap_rects: list[pg.rect.Rect] = overlap.get_bounding_rects()  # type: ignore
+            overlap_rects: list[pg.rect.Rect] = overlap.get_bounding_rects()  # type: ignore[reportAssignmentType]
 
             for overlap_rect in overlap_rects:
                 # Undo the offset
@@ -260,7 +258,7 @@ class Agent(Sprite, Generic[ConfigClass]):
                 # Return the centre coordinates of the connected pixels
                 yield Vector2(overlap_rect.center)
 
-    def on_spawn(self):
+    def on_spawn(self) -> None:
         """Run any code when the agent is spawned into the simulation.
 
         This method is a replacement for `__init__`, which you should not overwrite directly.
@@ -272,14 +270,11 @@ class Agent(Sprite, Generic[ConfigClass]):
         - Changing the image or state of your Agent depending on its assigned identifier.
         """
 
-        ...
-
     def there_is_no_escape(self) -> bool:
         """Pac-Man-style teleport the agent to the other side of the screen when it is outside of the playable area.
 
         Examples
         --------
-
         An agent that will always move to the right, until snapped back to reality.
 
         >>> class MyAgent(Agent):
@@ -289,8 +284,8 @@ class Agent(Sprite, Generic[ConfigClass]):
         ...     def change_position(self):
         ...         self.there_is_no_escape()
         ...         self.pos += self.move
-        """
 
+        """
         changed = False
 
         if self.pos.x < self._area.left:
@@ -311,7 +306,7 @@ class Agent(Sprite, Generic[ConfigClass]):
 
         return changed
 
-    def change_position(self):
+    def change_position(self) -> None:
         """Change the position of the agent.
 
         The agent's new position is calculated as follows:
@@ -335,7 +330,12 @@ class Agent(Sprite, Generic[ConfigClass]):
             self.move.rotate_ip(deg)
 
         # Obstacle Avoidance
-        obstacle_hit = pg.sprite.spritecollideany(self, self._obstacles, pg.sprite.collide_mask)  # type: ignore
+        obstacle_hit = pg.sprite.spritecollideany(
+            self,  # type: ignore[reportArgumentType]
+            self._obstacles,
+            pg.sprite.collide_mask,
+        )
+
         collision = bool(obstacle_hit)
 
         # Reverse direction when colliding with an obstacle.
@@ -354,7 +354,7 @@ class Agent(Sprite, Generic[ConfigClass]):
         # Only allow the angle opportunity to take place when no collisions have occured.
         # This is done so an agent always turns 180 degrees. Any small change in the number of degrees
         # allows the agent to possibly escape the obstacle.
-        if not collision and not self._still_stuck and 0.25 > should_change_angle:
+        if not collision and not self._still_stuck and should_change_angle < 0.25:  # noqa: PLR2004
             self.move.rotate_ip(deg)
 
         # Actually update the position at last.
@@ -378,7 +378,6 @@ class Agent(Sprite, Generic[ConfigClass]):
 
         Examples
         --------
-
         Count the number of agents that are in proximity
         and change to image `1` if there is at least one agent nearby.
 
@@ -418,8 +417,8 @@ class Agent(Sprite, Generic[ConfigClass]):
         ...             if len(in_proximity) > 0
         ...             else 0
         ...         )
-        """
 
+        """
         return self.__simulation._proximity.in_proximity_accuracy(self)
 
     def in_proximity_performance(self) -> ProximityIter[Agent[ConfigClass]]:
@@ -433,7 +432,6 @@ class Agent(Sprite, Generic[ConfigClass]):
         you can swap the function call for this one instead.
         This performance method roughly doubles the frame rates of the simulation.
         """
-
         return self.__simulation._proximity.in_proximity_performance(self)
 
     def on_site(self) -> bool:
@@ -441,7 +439,6 @@ class Agent(Sprite, Generic[ConfigClass]):
 
         Examples
         --------
-
         Stop the agent's movement when it reaches a site (think of a nice beach).
 
         >>> class TravellingAgent(Agent):
@@ -449,16 +446,15 @@ class Agent(Sprite, Generic[ConfigClass]):
         ...         if self.on_site():
         ...             # crave that star damage
         ...             self.freeze_movement()
-        """
 
+        """
         return self.on_site_id() is not None
 
-    def on_site_id(self) -> Optional[int]:
+    def on_site_id(self) -> int | None:
         """Get the identifier of the site the agent is currently on.
 
         Examples
         --------
-
         Stop the agent's movement when it reaches a site to inspect.
         In addition, the current site identifier is saved to the DataFrame.
 
@@ -477,36 +473,36 @@ class Agent(Sprite, Generic[ConfigClass]):
                     # Inspect the site
                     self.freeze_movement()
         ```
-        """
 
-        site: Optional[_StaticSprite] = pg.sprite.spritecollideany(self, self._sites, pg.sprite.collide_mask)  # type: ignore
+        """
+        site: _StaticSprite | None = pg.sprite.spritecollideany(
+            self,  # type: ignore[reportArgumentType]
+            self._sites,
+            pg.sprite.collide_mask,
+        )
 
         if site is not None:
             return site.id
-        else:
-            return None
+        return None
 
-    def freeze_movement(self):
+    def freeze_movement(self) -> None:
         """Freeze the movement of the agent. The movement can be continued by calling `continue_movement`."""
-
         self._moving = False
 
-    def continue_movement(self):
+    def continue_movement(self) -> None:
         """Continue the movement of the agent from before its movement was frozen."""
-
         self._moving = True
 
-    def change_image(self, index: int):
+    def change_image(self, index: int) -> None:
         """Change the image of the agent.
 
         If you want to change the agent's image to the second image in the images list,
         then you can change the image to index 1:
         >>> self.change_image(1)
         """
-
         self._image_index = index
 
-    def save_data(self, column: str, value: Any):
+    def save_data(self, column: str, value: Any) -> None:  # noqa: ANN401
         """Add extra data to the simulation's metrics.
 
         The following data is collected automatically:
@@ -516,20 +512,18 @@ class Agent(Sprite, Generic[ConfigClass]):
 
         Examples
         --------
-
         Saving the number of agents that are currently in proximity:
 
         >>> class MyAgent(Agent):
         ...     def update(self):
         ...         in_proximity = self.in_proximity_accuracy().count()
         ...         self.save_data("in_proximity", in_proximity)
-        """
 
+        """
         self.__simulation._metrics._temporary_snapshots[column].append(value)
 
-    def _collect_replay_data(self):
+    def _collect_replay_data(self) -> None:
         """Add the minimum data needed for the replay simulation to the dataframe."""
-
         x, y = self.center
         snapshots = self.__simulation._metrics._temporary_snapshots
 
@@ -551,7 +545,6 @@ class Agent(Sprite, Generic[ConfigClass]):
         Note that this only copies the `pos` and `move` vectors.
         Any other attributes will be set to their defaults.
         """
-
         cls = self.__class__
         agent = cls(self._images, self.__simulation)
 
@@ -569,10 +562,9 @@ class Agent(Sprite, Generic[ConfigClass]):
         except for the agent's position and movement vector.
         These will be cloned from the original agent.
         """
-
         return copy(self)
 
-    def kill(self):
+    def kill(self) -> None:
         """Kill the agent.
 
         While violence usually isn't the right option,
@@ -581,7 +573,6 @@ class Agent(Sprite, Generic[ConfigClass]):
         But fear not!
         By *killing* the agent, all you're really doing is removing it from the simulation.
         """
-
         super().kill()
 
     def is_dead(self) -> bool:
@@ -596,5 +587,4 @@ class Agent(Sprite, Generic[ConfigClass]):
 
         Death occurs when `kill` is called.
         """
-
         return super().alive()

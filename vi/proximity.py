@@ -4,13 +4,8 @@ import collections
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
-    Generator,
     Generic,
-    Optional,
-    Type,
     TypeVar,
-    Union,
     overload,
 )
 
@@ -18,6 +13,8 @@ from .config import ConfigClass
 
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Generator, Iterator
+
     from pygame.sprite import Group
 
     from .agent import Agent
@@ -47,7 +44,6 @@ class ProximityIter(Generic[T]):
 
     Examples
     --------
-
     Imagine that our agent is Mudusa. We want to freeze the movement of all agents that we see.
 
     We can implement this by simply looping over all the agents that are returned in the `ProximityIter` stream.
@@ -73,22 +69,22 @@ class ProximityIter(Generic[T]):
     ...     def update(self):
     ...         collectables = list(self.self.in_proximity_accuracy())
     ...         # do something with our collectables multiple times!
+
     """
 
     _gen: Generator[T, None, None]
 
-    def __init__(self, gen: Generator[T, None, None]):
+    def __init__(self, gen: Generator[T, None, None]) -> None:
         self._gen = gen
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[T]:
         return self._gen
 
     def filter(self, predicate: Callable[[T], bool]) -> ProximityIter[T]:
         """Filter the agents that are in proximity.
 
-        Example
+        Example:
         -------
-
         Count the number of dead agents in proximity.
 
         >>> zombies = (
@@ -106,30 +102,31 @@ class ProximityIter(Generic[T]):
         ...     .filter(lambda x: x[0].is_dead())
         ...     .count()
         ... )
-        """
 
+        """
         self._gen = (agent for agent in self if predicate(agent))
         return self
 
     @overload
     def filter_kind(
-        self: ProximityIter[tuple[AgentClass, float]], kind: Type[U]
-    ) -> ProximityIter[tuple[U, float]]:
-        ...
+        self: ProximityIter[tuple[AgentClass, float]],
+        kind: type[U],
+    ) -> ProximityIter[tuple[U, float]]: ...
 
     @overload
-    def filter_kind(self: ProximityIter[AgentClass], kind: Type[U]) -> ProximityIter[U]:
-        ...
+    def filter_kind(
+        self: ProximityIter[AgentClass],
+        kind: type[U],
+    ) -> ProximityIter[U]: ...
 
     def filter_kind(
-        self: Union[ProximityIter[tuple[AgentClass, float]], ProximityIter[AgentClass]],
-        kind: Type[U],
-    ) -> Union[ProximityIter[tuple[U, float]], ProximityIter[U]]:
+        self: ProximityIter[tuple[AgentClass, float]] | ProximityIter[AgentClass],
+        kind: type[U],
+    ) -> ProximityIter[tuple[U, float]] | ProximityIter[U]:
         """Filter the agents that are in proximity based on their class.
 
         Examples
         --------
-
         We don't want our Zombie to kill other zombies.
         Just humans!
 
@@ -146,9 +143,10 @@ class ProximityIter(Generic[T]):
         ...
         ...         if human is not None:
         ...             human.kill()
+
         """
 
-        def internal_generator() -> Generator[Union[tuple[U, float], U], None, None]:
+        def internal_generator() -> Generator[tuple[U, float] | U, None, None]:
             for maybe_tuple in self:
                 if isinstance(maybe_tuple, tuple):
                     agent, dist = maybe_tuple
@@ -157,7 +155,7 @@ class ProximityIter(Generic[T]):
                 elif isinstance(maybe_tuple, kind):
                     yield maybe_tuple
 
-        return ProximityIter(internal_generator())  # type: ignore
+        return ProximityIter(internal_generator())  # type: ignore[reportReturnType]
 
     def without_distance(self: ProximityIter[tuple[U, float]]) -> ProximityIter[U]:
         """Remove the distance from the results.
@@ -169,9 +167,8 @@ class ProximityIter(Generic[T]):
         Note that `vi.agent.Agent.in_proximity_performance` does not return the distance.
         So you cannot call this function on the performance method.
 
-        Example
+        Example:
         -------
-
         By default, the `vi.agent.Agent.in_proximity_accuracy` method returns a stream
         of agent-distance pairs.
 
@@ -182,18 +179,17 @@ class ProximityIter(Generic[T]):
 
         >>> for agent in self.in_proximity_accuracy().without_distance():
         ...     # Do things with agent directly
-        """
 
+        """
         return ProximityIter(agent for agent, _ in self)
 
-    def first(self) -> Optional[T]:
+    def first(self) -> T | None:
         """Retrieve the first agent that's in proximity.
 
         If there are no agents in proximity, `None` is returned instead.
 
         Examples
         --------
-
         Want to kill the first agent you see every frame?
 
         >>> other_agent = self.in_proximity_accuracy().without_distance().first()
@@ -212,8 +208,8 @@ class ProximityIter(Generic[T]):
         >>> if maybe_agent is not None:
         ...     agent, distance = maybe_agent
         ...     agent.kill()
-        """
 
+        """
         return next(self._gen, None)
 
     def collect_set(self) -> set[T]:
@@ -225,18 +221,16 @@ class ProximityIter(Generic[T]):
 
         >>> nearby_agents = self.in_proximity_accuracy().collect_set()
         """
-
         return set(self._gen)
 
     def count(self) -> int:
         """Count the number of agents that are in proximity.
 
-        Example
+        Example:
         -------
-
         >>> in_proximity = self.in_proximity_accuracy().count()
-        """
 
+        """
         count = 0
         for _ in self._gen:
             count += 1
@@ -256,19 +250,18 @@ class ProximityEngine(Generic[ConfigClass]):
     radius: int
     """The radius representing the agent's proximity view."""
 
-    def __init__(self, agents: Group[Any], radius: int):
+    def __init__(self, agents: Group[Any], radius: int) -> None:
         self.__agents = agents
         self.__chunks = collections.defaultdict(set)
 
         self._set_radius(radius)
 
-    def _set_radius(self, radius: int):
+    def _set_radius(self, radius: int) -> None:
         self.radius = radius
         self.chunk_size = radius * 2
 
     def __get_chunk(self, coordinates: tuple[int, int]) -> tuple[int, int]:
         """Retrieve the chunk coordinates for an agent's coordinates."""
-
         x, y = coordinates
 
         x_chunk = x // self.chunk_size
@@ -276,9 +269,8 @@ class ProximityEngine(Generic[ConfigClass]):
 
         return (x_chunk, y_chunk)
 
-    def update(self):
+    def update(self) -> None:
         """Update the internal chunk store with the agents' current positions."""
-
         self.__chunks.clear()
 
         for sprite in self.__agents.sprites():
@@ -288,7 +280,8 @@ class ProximityEngine(Generic[ConfigClass]):
             self.__chunks[chunk].add(agent)
 
     def __fast_retrieval(
-        self, agent: Agent[ConfigClass]
+        self,
+        agent: Agent[ConfigClass],
     ) -> Generator[Agent[ConfigClass], None, None]:
         chunk = self.__get_chunk(agent.center)
 
@@ -297,29 +290,30 @@ class ProximityEngine(Generic[ConfigClass]):
                 yield nearby_agent
 
     def in_proximity_performance(
-        self, agent: Agent[ConfigClass]
+        self,
+        agent: Agent[ConfigClass],
     ) -> ProximityIter[Agent[ConfigClass]]:
         """Retrieve a set of agents that are in the same chunk as the given agent."""
-
         agents = self.__fast_retrieval(agent)
         return ProximityIter(agents)
 
     def __accurate_retrieval(
-        self, agent: Agent[ConfigClass]
+        self,
+        agent: Agent[ConfigClass],
     ) -> Generator[tuple[Agent[ConfigClass], float], None, None]:
         x, y = agent.center
 
-        CHUNK_SIZE = self.chunk_size
-        RADIUS = self.radius
+        chunk_size = self.chunk_size
+        radius = self.radius
 
-        x_chunk, x_offset = divmod(x, CHUNK_SIZE)
-        y_chunk, y_offset = divmod(y, CHUNK_SIZE)
+        x_chunk, x_offset = divmod(x, chunk_size)
+        y_chunk, y_offset = divmod(y, chunk_size)
 
-        x_step = 1 if x_offset >= RADIUS else -1
-        x_chunk_offset = 0 if x_offset == RADIUS else x_step
+        x_step = 1 if x_offset >= radius else -1
+        x_chunk_offset = 0 if x_offset == radius else x_step
 
-        y_step = 1 if y_offset >= RADIUS else -1
-        y_chunk_offset = 0 if y_offset == RADIUS else y_step
+        y_step = 1 if y_offset >= radius else -1
+        y_chunk_offset = 0 if y_offset == radius else y_step
 
         for x in range(x_chunk, x_chunk + x_chunk_offset + x_step, x_step):
             for y in range(y_chunk, y_chunk + y_chunk_offset + y_step, y_step):
@@ -330,14 +324,12 @@ class ProximityEngine(Generic[ConfigClass]):
                         and agent.is_alive()
                         and distance <= self.radius
                     ):
-                        yield (other, distance)  # type: ignore
+                        yield (other, distance)
 
     def in_proximity_accuracy(
-        self, agent: Agent[ConfigClass]
+        self,
+        agent: Agent[ConfigClass],
     ) -> ProximityIter[tuple[Agent[ConfigClass], float]]:
-        """Retrieve a set of agents that are in the same chunk as the given agent,
-        in addition to the agents in the eight neighbouring chunks.
-        """
-
+        """Retrieve a set of agents that are in the same chunk as the given agent, in addition to the agents in the eight neighbouring chunks."""
         agents = self.__accurate_retrieval(agent)
         return ProximityIter(agents)

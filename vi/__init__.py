@@ -1,5 +1,4 @@
-"""
-A smol simulator framework built on top of [PyGame](https://www.pygame.org/docs/).
+"""A smol simulator framework built on top of [PyGame](https://www.pygame.org/docs/).
 
 - Automatic agent wandering behaviour
 - Fully deterministic simulations with PRNG seeds
@@ -148,6 +147,7 @@ Now, there's way more to explore.
 But this should give you an impression on how to change the behaviour of your agents with Violet.
 Explore some of the modules on the left and experiment away!
 """
+
 from dataclasses import dataclass
 
 from pygame.math import Vector2
@@ -164,34 +164,19 @@ from .util import probability
 
 
 __all__ = [
-    # agent
     "Agent",
-
-    # config
     "Config",
-    "Matrix",
-    "Window",
-
-    # metrics
     "Fps",
-    "Metrics",
-
-    # proximity
-    "ProximityIter",
-
-    # replay
-    "TimeMachine",
-
-    # simulation
     "HeadlessSimulation",
+    "Matrix",
+    "Metrics",
+    "ProximityIter",
     "Simulation",
-
-    # util
-    "probability",
-
-    # re-exports
+    "TimeMachine",
+    "Vector2",
+    "Window",
     "dataclass",
     "deserialize",
+    "probability",
     "serialize",
-    "Vector2"
 ]
