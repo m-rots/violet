@@ -53,6 +53,7 @@ from .proximity import ProximityEngine
 
 
 if TYPE_CHECKING:
+    from pygame.event import Event
     from typing_extensions import Self
 
     from .agent import Agent
@@ -440,7 +441,7 @@ class Simulation(HeadlessSimulation):
         self._clock = pg.time.Clock()
 
     def before_update(self):
-        rebound = []
+        rebound: list[Event] = []
         for event in pg.event.get(eventtype=[pg.QUIT, pg.KEYDOWN]):
             if event.type == pg.QUIT:
                 self.stop()
