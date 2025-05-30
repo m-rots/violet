@@ -81,7 +81,7 @@ class TimeMachine:
             if data["frame"] != current_frame:
                 break
 
-            image_index = data["image_index"]
+            image_index: int = data["image_index"]
             image = self.images[image_index]
 
             angle = data.get("angle")
