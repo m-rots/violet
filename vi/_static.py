@@ -14,6 +14,9 @@ if TYPE_CHECKING:
     from pygame.rect import Rect
     from pygame.surface import Surface
 
+__all__ = ["_StaticSprite"]
+
+
 class _StaticSprite(Sprite):
     id: int
 
