@@ -33,7 +33,7 @@ print(
         ],
     )
     .run()
-    .snapshots.groupby("frame")
+    .snapshots.group_by("frame")
     # Count the number of agents (per frame) that see at least one other agent (making them red)
     .agg((pl.col("in_radius") > 0).sum().alias("# red agents"))
     .select("# red agents")
