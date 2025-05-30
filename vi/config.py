@@ -7,7 +7,7 @@ from typing import Any, Generic, Optional, Type, Union
 from serde.de import deserialize
 from serde.se import serialize
 from serde.toml import from_toml
-from typing_extensions import TypeVar
+from typing_extensions import TypeGuard, TypeVar
 
 
 __all__ = [
@@ -32,19 +32,23 @@ def _embiggen(input_list: list[Any], copies: int):
         input_list.extend(deepcopy(head))
 
 
+def _is_list(obj: Any) -> TypeGuard[list[Any]]:
+    return isinstance(obj, list)
+
+
 def _matrixify(matrix: dict[str, Union[Any, list[Any]]]) -> list[dict[str, Any]]:
     combinations: list[dict[str, Any]] = []
 
     for key, values in matrix.items():
         # Skip this key if its value is an empty list
-        if isinstance(values, list) and len(values) == 0:
+        if _is_list(values) and len(values) == 0:
             continue
 
         # Initially the list is empty, so the dicts have to be
         # manually created on the first iteration.
         if len(combinations) == 0:
             # Multiple values
-            if isinstance(values, list):
+            if _is_list(values):
                 for value in values:
                     combinations.append({key: value})
 
@@ -53,7 +57,7 @@ def _matrixify(matrix: dict[str, Union[Any, list[Any]]]) -> list[dict[str, Any]]
                 combinations.append({key: values})
 
         # If we have a list of dicts, we can simply add our key!
-        elif isinstance(values, list): # Multiple values
+        elif _is_list(values):  # Multiple values
             original_length = len(combinations)
             _embiggen(combinations, len(values))
 
@@ -61,7 +65,7 @@ def _matrixify(matrix: dict[str, Union[Any, list[Any]]]) -> list[dict[str, Any]]
                 value_index = index // original_length
                 entry[key] = values[value_index]
 
-        elif values is not None: # Single value
+        elif values is not None:  # Single value
             for entry in combinations:
                 entry[key] = values
 
