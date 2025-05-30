@@ -14,6 +14,8 @@ from typing import (
     overload,
 )
 
+from .config import ConfigClass
+
 
 if TYPE_CHECKING:
     from pygame.sprite import Group
@@ -242,10 +244,10 @@ class ProximityIter(Generic[T]):
         return count
 
 
-class ProximityEngine:
+class ProximityEngine(Generic[ConfigClass]):
     __agents: Group[Any]
 
-    __chunks: dict[tuple[int, int], set[Agent]]
+    __chunks: dict[tuple[int, int], set[Agent[ConfigClass]]]
     """A map between chunk locations and the agents currently in that chunk."""
 
     chunk_size: int
@@ -280,27 +282,31 @@ class ProximityEngine:
         self.__chunks.clear()
 
         for sprite in self.__agents.sprites():
-            agent: Agent = sprite  # type: ignore
+            agent: Agent[ConfigClass] = sprite
 
             chunk = self.__get_chunk(agent.center)
             self.__chunks[chunk].add(agent)
 
-    def __fast_retrieval(self, agent: AgentClass) -> Generator[AgentClass, None, None]:
+    def __fast_retrieval(
+        self, agent: Agent[ConfigClass]
+    ) -> Generator[Agent[ConfigClass], None, None]:
         chunk = self.__get_chunk(agent.center)
 
         for nearby_agent in self.__chunks[chunk]:
             if nearby_agent.id != agent.id and agent.is_alive():
-                yield nearby_agent  # type: ignore
+                yield nearby_agent
 
-    def in_proximity_performance(self, agent: AgentClass) -> ProximityIter[AgentClass]:
+    def in_proximity_performance(
+        self, agent: Agent[ConfigClass]
+    ) -> ProximityIter[Agent[ConfigClass]]:
         """Retrieve a set of agents that are in the same chunk as the given agent."""
 
         agents = self.__fast_retrieval(agent)
         return ProximityIter(agents)
 
     def __accurate_retrieval(
-        self, agent: AgentClass
-    ) -> Generator[tuple[AgentClass, float], None, None]:
+        self, agent: Agent[ConfigClass]
+    ) -> Generator[tuple[Agent[ConfigClass], float], None, None]:
         x, y = agent.center
 
         CHUNK_SIZE = self.chunk_size
@@ -327,8 +333,8 @@ class ProximityEngine:
                         yield (other, distance)  # type: ignore
 
     def in_proximity_accuracy(
-        self, agent: AgentClass
-    ) -> ProximityIter[tuple[AgentClass, float]]:
+        self, agent: Agent[ConfigClass]
+    ) -> ProximityIter[tuple[Agent[ConfigClass], float]]:
         """Retrieve a set of agents that are in the same chunk as the given agent,
         in addition to the agents in the eight neighbouring chunks.
         """

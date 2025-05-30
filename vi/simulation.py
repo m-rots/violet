@@ -40,14 +40,14 @@ from __future__ import annotations
 
 import random
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Type
+from typing import TYPE_CHECKING, Any, Generic, Type
 
 import pygame as pg
 from pygame.gfxdraw import hline, vline
 from pygame.math import Vector2
 
 from ._static import _StaticSprite
-from .config import Config
+from .config import ConfigClass
 from .metrics import Metrics
 from .proximity import ProximityEngine
 
@@ -57,8 +57,6 @@ if TYPE_CHECKING:
     from typing_extensions import Self
 
     from .agent import Agent
-
-    AgentClass = TypeVar("AgentClass", bound=Agent)
 
 
 __all__ = [
@@ -83,7 +81,7 @@ class Shared:
     """A counter that increases each tick of the simulation."""
 
 
-class HeadlessSimulation:
+class HeadlessSimulation(Generic[ConfigClass]):
     """The Headless Mode equivalent of `Simulation`.
 
     Headless Mode removes all the rendering logic from the simulation
@@ -150,10 +148,10 @@ class HeadlessSimulation:
     """The site identifier to be given next."""
 
     # Proximity
-    _proximity: ProximityEngine
+    _proximity: ProximityEngine[ConfigClass]
 
     # Config that's passed on to agents as well
-    config: Config
+    config: ConfigClass
     """The config of the simulation that's shared with all agents.
 
     The config can be overriden when inheriting the Simulation class.
@@ -169,8 +167,8 @@ class HeadlessSimulation:
     Each agent produces a Snapshot at every frame in the simulation.
     """
 
-    def __init__(self, config: Optional[Config] = None):
-        self.config = config if config else Config()
+    def __init__(self, config: ConfigClass):
+        self.config = config
         self._metrics = Metrics()
 
         # Initiate the seed as early as possible.
@@ -192,12 +190,12 @@ class HeadlessSimulation:
         self._sites = pg.sprite.Group()
 
         # Proximity!
-        self._proximity = ProximityEngine(self._agents, self.config.radius)
+        self._proximity = ProximityEngine[ConfigClass](self._agents, self.config.radius)
 
     def batch_spawn_agents(
         self,
         count: int,
-        agent_class: Type[AgentClass],
+        agent_class: Type[Agent[ConfigClass]],
         images: list[str],
     ) -> Self:
         """Spawn multiple agents into the simulation.
@@ -224,7 +222,7 @@ class HeadlessSimulation:
 
     def spawn_agent(
         self,
-        agent_class: Type[AgentClass],
+        agent_class: Type[Agent[ConfigClass]],
         images: list[str],
     ) -> Self:
         """Spawn one agent into the simulation.
@@ -408,7 +406,7 @@ class HeadlessSimulation:
         return site_id
 
 
-class Simulation(HeadlessSimulation):
+class Simulation(Generic[ConfigClass], HeadlessSimulation[ConfigClass]):
     """
     This class offers the same functionality as `HeadlessSimulation`,
     but adds logic to automatically draw all agents, obstacles and sites to your screen.
@@ -420,7 +418,7 @@ class Simulation(HeadlessSimulation):
     _clock: pg.time.Clock
     _screen: pg.surface.Surface
 
-    def __init__(self, config: Optional[Config] = None):
+    def __init__(self, config: ConfigClass):
         super().__init__(config)
 
         pg.display.init()
