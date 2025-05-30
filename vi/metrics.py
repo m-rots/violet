@@ -196,7 +196,7 @@ __all__ = [
 
 @dataclass
 class Fps:
-    _fps: list[float] = field(default_factory=list)
+    _fps: list[float] = field(default_factory=list[float])
 
     def _push(self, fps: float):
         self._fps.append(fps)
