@@ -2,16 +2,18 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import dataclass, field
-from typing import Any, Generic, Optional, Type, TypeVar, Union
+from typing import Any, Generic, Optional, Type, Union
 
 from serde.de import deserialize
 from serde.se import serialize
 from serde.toml import from_toml
+from typing_extensions import TypeVar
 
 
 __all__ = [
     "dataclass",
     "Config",
+    "ConfigClass",
     "Matrix",
     "Schema",
     "Window"
@@ -422,3 +424,5 @@ class Config(Schema[int, float]):
     """
 
     ...
+
+ConfigClass = TypeVar("ConfigClass", bound=Config, default=Config)

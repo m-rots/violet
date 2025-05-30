@@ -7,12 +7,13 @@ Inheriting the Agent class allows you to modify the behaviour of the agents in t
 from __future__ import annotations
 
 from copy import copy
-from typing import TYPE_CHECKING, Any, Generator, Optional
+from typing import TYPE_CHECKING, Any, Generator, Generic, Optional
 
 import pygame as pg
 from pygame.math import Vector2
 from pygame.sprite import Group, Sprite
 
+from .config import ConfigClass
 from .util import random_angle, random_pos, round_pos
 
 
@@ -23,7 +24,6 @@ if TYPE_CHECKING:
     from typing_extensions import Self
 
     from ._static import _StaticSprite
-    from .config import Config
     from .proximity import ProximityIter
     from .simulation import HeadlessSimulation, Shared
 
@@ -33,7 +33,7 @@ __all__ = [
 ]
 
 
-class Agent(Sprite):
+class Agent(Sprite, Generic[ConfigClass]):
     """
     The `Agent` class is home to Violet's various additions and is
     built on top of [PyGame's Sprite](https://www.pygame.org/docs/ref/sprite.html) class.
@@ -50,7 +50,7 @@ class Agent(Sprite):
     id: int
     """The unique identifier of the agent."""
 
-    config: Config
+    config: ConfigClass
     """The config of the simulation that's shared with all agents.
 
     The config can be overriden when inheriting the Agent class.
@@ -103,7 +103,7 @@ class Agent(Sprite):
     _sites: Group[Any]
     """The group of sites on which the agent can appear."""
 
-    __simulation: HeadlessSimulation
+    __simulation: HeadlessSimulation[ConfigClass]
 
     _moving: bool = True
     """The agent's movement will freeze when moving is set to False."""
@@ -111,7 +111,7 @@ class Agent(Sprite):
     def __init__(
         self,
         images: list[Surface],
-        simulation: HeadlessSimulation,
+        simulation: HeadlessSimulation[ConfigClass],
         pos: Optional[Vector2] = None,
         move: Optional[Vector2] = None,
     ):
@@ -360,7 +360,7 @@ class Agent(Sprite):
         # Actually update the position at last.
         self.pos += self.move
 
-    def in_proximity_accuracy(self) -> ProximityIter[tuple[Self, float]]:
+    def in_proximity_accuracy(self) -> ProximityIter[tuple[Agent[ConfigClass], float]]:
         """Retrieve other agents that are in the `vi.config.Schema.radius` of the current agent.
 
         This proximity method calculates the distances between agents to determine whether
@@ -422,7 +422,7 @@ class Agent(Sprite):
 
         return self.__simulation._proximity.in_proximity_accuracy(self)
 
-    def in_proximity_performance(self) -> ProximityIter[Self]:
+    def in_proximity_performance(self) -> ProximityIter[Agent[ConfigClass]]:
         """Retrieve other agents that are in the `vi.config.Schema.radius` of the current agent.
 
         Unlike `in_proximity_accuracy`, this proximity method does not calculate the distances between agents.
