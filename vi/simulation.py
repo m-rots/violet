@@ -85,7 +85,7 @@ class Shared:
     """A counter that increases each tick of the simulation."""
 
 
-class HeadlessSimulation[ConfigClass: Config = Config]:
+class HeadlessSimulation[ConfigClass: Config]:
     """The Headless Mode equivalent of `Simulation`.
 
     Headless Mode removes all the rendering logic from the simulation
@@ -411,7 +411,7 @@ class HeadlessSimulation[ConfigClass: Config = Config]:
         return site_id
 
 
-class Simulation[ConfigClass: Config = Config](HeadlessSimulation[ConfigClass]):
+class Simulation[ConfigClass: Config](HeadlessSimulation[ConfigClass]):
     """Offers the same functionality as `HeadlessSimulation`, but adds logic to automatically draw all agents, obstacles and sites to your screen.
 
     If a custom config isn't provided when creating the simulation, the default values of `Config` will be used instead.

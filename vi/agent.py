@@ -56,7 +56,7 @@ class Agent[ConfigClass: Config = Config](Sprite):
     However, the config must always:
 
     1. Inherit `Config`
-    2. Be decorated by `@deserialize` and `@dataclass`
+    2. Be decorated by `@dataclass`
     """
 
     shared: Shared

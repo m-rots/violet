@@ -12,6 +12,8 @@ if TYPE_CHECKING:
 __all__ = [
     "Config",
     "Matrix",
+    "Mono",
+    "Poly",
     "Schema",
     "Window",
 ]
@@ -33,6 +35,9 @@ def _matrixify(matrix: dict[str, Any | list[Any]]) -> list[dict[str, Any]]:  # n
     combinations: list[dict[str, Any]] = []
 
     for key, values in matrix.items():
+        if key.startswith("_"):
+            continue
+
         # Skip this key if its value is an empty list
         if _is_list(values) and len(values) == 0:
             continue
@@ -85,21 +90,19 @@ class Window:
         return (self.width, self.height)
 
 
-MatrixInt = int | list[int]
-MatrixFloat = float | list[float]
+type Mono[T] = T
+type Poly[T] = T | list[T]
 
 
 @dataclass
-class Schema[MatrixInt, MatrixFloat]:
+class Schema[Int: Poly[int], Float: Poly[float]]:
     """All values shared between `Config` and `Matrix`.
 
-    The `Schema` contains all the default values and descriptions for the various configuration options.
-    You should never use `Schema` directly.
-    Instead, your custom `Config` and `Matrix` classes should inherit your custom `Schema`.
-    This way, default values are supplied to both classes.
+    NOTE: DOCUMENTATION OF SCHEMA IS INCORRECT AND WILL BE UPDATED IN VERSION 0.3.1.
+    IF YOU ARE SEEING THIS MESSAGE, MAKE SURE TO UPDATE VIOLET.
 
     A sprinkle of ✨ [magical typing](https://mypy.readthedocs.io/en/stable/generics.html) ✨ makes list values in the `Matrix` class possible without any overrides.
-    You'll notice that the `Schema` class is generic over two type parameters: `MatrixInt` and `MatrixFloat`.
+    You'll notice that the `Schema` class is generic over two type parameters: `Int` and `Float`.
     These type parameters can either be a single int/float value or a list of int/float values respectively.
     In combination with the [`Union`](https://docs.python.org/3/library/typing.html#typing.Union) of int/float, both a `Matrix` and `Config` class can be derived.
 
@@ -225,16 +228,16 @@ class Schema[MatrixInt, MatrixFloat]:
     and currently causes a bug where agents clip into obstacles.
     """
 
-    movement_speed: float | MatrixFloat = 0.5
+    movement_speed: float | Float = 0.5
     """The per-frame movement speed of the agents."""
 
     print_fps: bool = False
     """Print the current number of frames-per-second in the terminal"""
 
-    radius: int | MatrixInt = 25
+    radius: int | Int = 25
     """The radius (in pixels) in which agents are considered to be in proximity."""
 
-    seed: int | MatrixInt | None = None
+    seed: int | Int | None = None
     """The PRNG seed to use for the simulation.
 
     Defaults to `None`, indicating that no seed is used.
@@ -246,194 +249,195 @@ class Schema[MatrixInt, MatrixFloat]:
     window: Window = field(default_factory=Window)
     """The simulation window"""
 
-
-@dataclass
-class Matrix(Schema[list[int], list[float]]):
-    """`Matrix` is the `Config` class on steroids.
-
-    It allows you to supply a list of values on certain configuration options,
-    to automatically generate multiple unique `Config` instances.
-
-    Examples
-    --------
-    Imagine that you want to research the effect of the `radius` parameter.
-    Instead of only testing the default value of 25 pixels,
-    you also want to test a radius of 10 and 50 pixels.
-
-    A brute-force approach would be to create three unique `Config` instances manually.
-
-    ```python
-    config1 = Config(radius=10)
-    config2 = Config(radius=25)
-    config3 = Config(radius=50)
-    ```
-
-    However, perhaps we also want to override some other default values,
-    such as adding a `duration` to the simulation.
-    If we follow the same approach, then our code becomes messy rather quickly.
-
-    ```python
-    config1 = Config(radius=10, duration=60 * 10)
-    config2 = Config(radius=25, duration=60 * 10)
-    config3 = Config(radius=50, duration=60 * 10)
-    ```
-
-    So what do we do?
-
-    We use the `Matrix` class! 😎
-
-    The `Matrix` class allows us to write multiple configurations as if we are writing one configuration.
-    If we want to test multiple values of `radius`, then we can simply supply a list of values.
-
-    ```python
-    matrix = Matrix(duration=60 * 10, radius=[10, 25, 50])
-    ```
-
-    It's that easy!
-    Now, if we want to generate a `Config` for each of the values in the radius list,
-    we can call the `to_configs` method.
-
-    ```python
-    configs = matrix.to_configs(Config)
-    ```
-
-    The list of configs returned by the `to_configs` method is equivalent to the brute-force approach we took earlier.
-    However, by utilising `Matrix`, our code is way more compact and easier to read.
-
-    And the fun doesn't stop there, as we can supply lists to multiple config options as well!
-    Let's say that we not only want to test the effect of `radius`, but also the effect of `movement_speed`.
-    We can simply pass a list of values to `movement_speed` and `Matrix` will automatically compute
-    the unique `Config` combinations that it can make between the values of `radius` and `movement_speed`.
-
-    ```python
-    matrix = Matrix(
-        duration=60 * 10,
-        radius=[10, 25, 50],
-        movement_speed=[0.5, 1.0],
-    )
-    ```
-
-    If we now check the number of configs generated,
-    we will see that the above matrix produces 6 unique combinations (3 x 2).
-
-    >>> len(matrix.to_configs(Config))
-    6
-
-    `Matrix` is an essential tool for analysing the effect of your simulation's parameters.
-    It allows you to effortlessly create multiple configurations, while keeping your code tidy.
-
-    Now, before you create a for-loop and iterate over the list of configs,
-    allow me to introduce you to [multiprocessing](https://docs.python.org/3/library/multiprocessing.html).
-    This built-in Python library allows us to run multiple simulations in parallel.
-
-    As you might already know, your processor (or CPU) consists of multiple cores.
-    Parallelisation allows us to run one simulation on every core of your CPU.
-    So if you have a beefy 10-core CPU, you can run 10 simulations in the same time as running one simulation individually.
-
-    However, your GPU might not be able to keep up with rendering 10 simulations at once.
-    Therefore, it's best to switch to `HeadlessSimulation` when running multiple simulations in parallel,
-    as this simulation class disables all the rendering-related logic.
-    Thus, removing the GPU from the equation.
-
-    To learn more about parallelisation, please check out the [multiprocessing documentation](https://docs.python.org/3/library/multiprocessing.html).
-    For Violet, the following code is all you need to get started with parallelisation.
-
-    ```python
-    from multiprocessing import Pool
-
-    import polars as pl
-
-    from vi import Agent, Config, HeadlessSimulation, Matrix
-
-
-    class ParallelAgent(Agent):
-        config: Config
-
-        def update(self):
-            # We save the radius and seed config values to our DataFrame,
-            # so we can make comparisons between these config values later.
-            self.save_data("radius", self.config.radius)
-            self.save_data("seed", self.config.seed)
-
-
-    def run_simulation(config: Config) -> pl.DataFrame:
-        return (
-            HeadlessSimulation(config)
-            .batch_spawn_agents(100, ParallelAgent, ["examples/images/white.png"])
-            .run()
-            .snapshots
-        )
-
-
-    if __name__ == "__main__":
-        # We create a threadpool to run our simulations in parallel
-        with Pool() as p:
-            # The matrix will create four unique configs
-            matrix = Matrix(radius=[25, 50], seed=[1, 2])
-
-            # Create unique combinations of matrix values
-            configs = matrix.to_configs(Config)
-
-            # Combine our individual DataFrames into one big DataFrame
-            df = pl.concat(p.map(run_simulation, configs))
-
-            print(df)
-    ```
-
-    """
-
-    def to_configs[T: "Config"](self, config: type[T]) -> list[T]:
+    def to_configs[T: Config](
+        self,
+        target: type[T],
+    ) -> list[T]:
         """Generate a config for every unique combination of values in the matrix."""
-        return [config(**values) for values in _matrixify(vars(self))]
+        return [target(**values) for values in _matrixify(self.__dict__)]
 
 
+Matrix = Schema[Poly[int], Poly[float]]
+"""`Matrix` is `Config` on steroids.
+
+It allows you to supply a list of values on certain configuration options,
+to automatically generate multiple unique `Config` instances.
+
+Examples
+--------
+Imagine that you want to research the effect of the `radius` parameter.
+Instead of only testing the default value of 25 pixels,
+you also want to test a radius of 10 and 50 pixels.
+
+A brute-force approach would be to create three unique `Config` instances manually.
+
+```python
+config1 = Config(radius=10)
+config2 = Config(radius=25)
+config3 = Config(radius=50)
+```
+
+However, perhaps we also want to override some other default values,
+such as adding a `duration` to the simulation.
+If we follow the same approach, then our code becomes messy rather quickly.
+
+```python
+config1 = Config(radius=10, duration=60 * 10)
+config2 = Config(radius=25, duration=60 * 10)
+config3 = Config(radius=50, duration=60 * 10)
+```
+
+So what do we do?
+
+We use `Matrix`! 😎
+
+`Matrix` allows us to write multiple configurations as if we are writing one configuration.
+If we want to test multiple values of `radius`, then we can simply supply a list of values.
+
+```python
+matrix = Matrix(duration=60 * 10, radius=[10, 25, 50])
+```
+
+It's that easy!
+Now, if we want to generate a `Config` for each of the values in the radius list,
+we can call the `to_configs` method.
+
+```python
+configs = matrix.to_configs(Config)
+```
+
+The list of configs returned by the `to_configs` method is equivalent to the brute-force approach we took earlier.
+However, by utilising `Matrix`, our code is way more compact and easier to read.
+
+And the fun doesn't stop there, as we can supply lists to multiple config options as well!
+Let's say that we not only want to test the effect of `radius`, but also the effect of `movement_speed`.
+We can simply pass a list of values to `movement_speed` and `Matrix` will automatically compute
+the unique `Config` combinations that it can make between the values of `radius` and `movement_speed`.
+
+```python
+matrix = Matrix(
+    duration=60 * 10,
+    radius=[10, 25, 50],
+    movement_speed=[0.5, 1.0],
+)
+```
+
+If we now check the number of configs generated,
+we will see that the above matrix produces 6 unique combinations (3 x 2).
+
+>>> len(matrix.to_configs(Config))
+6
+
+`Matrix` is an essential tool for analysing the effect of your simulation's parameters.
+It allows you to effortlessly create multiple configurations, while keeping your code tidy.
+
+Now, before you create a for-loop and iterate over the list of configs,
+allow me to introduce you to [multiprocessing](https://docs.python.org/3/library/multiprocessing.html).
+This built-in Python library allows us to run multiple simulations in parallel.
+
+As you might already know, your processor (or CPU) consists of multiple cores.
+Parallelisation allows us to run one simulation on every core of your CPU.
+So if you have a beefy 10-core CPU, you can run 10 simulations in the same time as running one simulation individually.
+
+However, your GPU might not be able to keep up with rendering 10 simulations at once.
+Therefore, it's best to switch to `HeadlessSimulation` when running multiple simulations in parallel,
+as this simulation class disables all the rendering-related logic.
+Thus, removing the GPU from the equation.
+
+To learn more about parallelisation, please check out the [multiprocessing documentation](https://docs.python.org/3/library/multiprocessing.html).
+For Violet, the following code is all you need to get started with parallelisation.
+
+```python
+from multiprocessing import Pool
+
+import polars as pl
+
+from vi import Agent, Config, HeadlessSimulation, Matrix
+
+
+class ParallelAgent(Agent):
+    config: Config
+
+    def update(self):
+        # We save the radius and seed config values to our DataFrame,
+        # so we can make comparisons between these config values later.
+        self.save_data("radius", self.config.radius)
+        self.save_data("seed", self.config.seed)
+
+
+def run_simulation(config: Config) -> pl.DataFrame:
+    return (
+        HeadlessSimulation(config)
+        .batch_spawn_agents(100, ParallelAgent, ["examples/images/white.png"])
+        .run()
+        .snapshots
+    )
+
+
+if __name__ == "__main__":
+    # We create a threadpool to run our simulations in parallel
+    with Pool() as p:
+        # The matrix will create four unique configs
+        matrix = Matrix(radius=[25, 50], seed=[1, 2])
+
+        # Create unique combinations of matrix values
+        configs = matrix.to_configs(Config)
+
+        # Combine our individual DataFrames into one big DataFrame
+        df = pl.concat(p.map(run_simulation, configs))
+
+        print(df)
+```
+
+"""
+
+
+Config = Schema[Mono[int], Mono[float]]
+"""`Config` allows you to tweak the settings of your experiment.
+
+Examples
+--------
+If you want to change the proximity `radius` of your agents,
+you can create a new `Config` instance and pass a custom value for `radius`.
+
+```python
+from vi import Agent, Config, Simulation
+
+
+(
+    #                   👇 we override the default radius value
+    Simulation(Config(radius=50))
+    .batch_spawn_agents(100, Agent, ["examples/images/white.png"])
+    .run()
+)
+```
+
+To add your own values to `Config`,
+you can simply inherit `Config`, decorate it with [`@dataclass`](https://docs.python.org/3/library/dataclasses.html) and add your own options.
+However, make sure to declare the [type](https://mypy.readthedocs.io/en/stable/cheat_sheet_py3.html) of the configuration option
+along with its default value.
+
+```python
 @dataclass
-class Config(Schema[int, float]):
-    """The `Config` class allows you to tweak the settings of your experiment.
+class MyConfig(Config):
+    #           👇 type
+    excitement: int = 100
+    #                  👆 default value
+```
 
-    Examples
-    --------
-    If you want to change the proximity `radius` of your agents,
-    you can create a new `Config` instance and pass a custom value for `radius`.
+Last but not least, declare that your agent is using the `MyConfig` class
+and pass it along to the constructor of `Simulation`.
 
-    ```python
-    from vi import Agent, Config, Simulation
+```python
+#                      👇 use our custom config
+class MyAgent(Agent[MyConfig]): ...
 
+(
+    #             👇 here too!
+    Simulation(MyConfig())
+    .batch_spawn_agents(100, MyAgent, ["examples/images/white.png"])
+    .run()
+)
+```
 
-    (
-        #                   👇 we override the default radius value
-        Simulation(Config(radius=50))
-        .batch_spawn_agents(100, Agent, ["examples/images/white.png"])
-        .run()
-    )
-    ```
-
-    To add your own values to `Config`,
-    you can simply inherit `Config`, decorate it with [`@dataclass`](https://docs.python.org/3/library/dataclasses.html) and add your own options.
-    However, make sure to declare the [type](https://mypy.readthedocs.io/en/stable/cheat_sheet_py3.html) of the configuration option
-    along with its default value.
-
-    ```python
-    @dataclass
-    class MyConfig(Config):
-        #           👇 type
-        excitement: int = 100
-        #                  👆 default value
-    ```
-
-    Last but not least, declare that your agent is using the `MyConfig` class
-    and pass it along to the constructor of `Simulation`.
-
-    ```python
-    #                      👇 use our custom config
-    class MyAgent(Agent[MyConfig]): ...
-
-    (
-        #             👇 here too!
-        Simulation(MyConfig())
-        .batch_spawn_agents(100, MyAgent, ["examples/images/white.png"])
-        .run()
-    )
-    ```
-
-    """
+"""
