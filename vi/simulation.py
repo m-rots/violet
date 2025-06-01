@@ -43,22 +43,24 @@ from __future__ import annotations
 
 import random
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING
 
 import pygame as pg
 from pygame.gfxdraw import hline, vline
 from pygame.math import Vector2
 
 from ._static import _StaticSprite
-from .config import Config
 from .metrics import Metrics
 from .proximity import ProximityEngine
 
 
 if TYPE_CHECKING:
+    from typing import Any, Self
+
     from pygame.event import Event
 
     from .agent import Agent
+    from .config import Config
 
 
 __all__ = [

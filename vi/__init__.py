@@ -176,24 +176,20 @@ Explore some of the modules on the left and experiment away!
 
 from .agent import Agent
 from .config import Config, Matrix, Window
-from .metrics import Fps, Metrics
-from .replay import TimeMachine
 from .simulation import HeadlessSimulation, Simulation
 
 
 __all__ = [
     "Agent",
     "Config",
-    "Fps",
     "HeadlessSimulation",
     "Matrix",
-    "Metrics",
     "Simulation",
-    "TimeMachine",
     "Window",
     "agent",
     "config",
-    "metrics",
+    "metrics",  # type: ignore[reportUnsupportedDunderAll]
+    "replay",  #  # type: ignore[reportUnsupportedDunderAll]
     "simulation",
     "util",  # type: ignore[reportUnsupportedDunderAll]
 ]

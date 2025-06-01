@@ -6,24 +6,26 @@ Inheriting the Agent class allows you to modify the behaviour of the agents in t
 from __future__ import annotations
 
 from copy import copy
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING
 
 import pygame as pg
 from pygame.math import Vector2
-from pygame.sprite import Group, Sprite
+from pygame.sprite import Sprite
 
-from .config import Config
 from .util import random_angle, random_pos, round_pos
 
 
 if TYPE_CHECKING:
     from collections.abc import Generator
+    from typing import Any, Self
 
     from pygame.mask import Mask
     from pygame.rect import Rect
+    from pygame.sprite import Group
     from pygame.surface import Surface
 
     from ._static import _StaticSprite
+    from .config import Config
     from .simulation import HeadlessSimulation, Shared
 
 

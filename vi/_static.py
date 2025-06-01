@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import pygame as pg
 from pygame.sprite import Group, Sprite
@@ -8,16 +8,19 @@ from pygame.sprite import Group, Sprite
 from .util import round_pos
 
 
-__all__ = ["_StaticSprite"]
-
 if TYPE_CHECKING:
+    from typing import Any
+
     from pygame.mask import Mask
     from pygame.math import Vector2
     from pygame.rect import Rect
     from pygame.surface import Surface
+
     GenericGroup = Group[Any]
 else:
     GenericGroup = Group
+
+__all__ = ["_StaticSprite"]
 
 
 class _StaticSprite(Sprite):

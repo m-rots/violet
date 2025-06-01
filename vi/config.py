@@ -2,7 +2,11 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import dataclass, field
-from typing import Any, Self, TypeIs
+from typing import TYPE_CHECKING
+
+
+if TYPE_CHECKING:
+    from typing import Any, Self, TypeIs
 
 
 __all__ = [

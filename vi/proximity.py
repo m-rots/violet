@@ -1,17 +1,17 @@
 from __future__ import annotations
 
 import collections
-from typing import TYPE_CHECKING, Any
-
-from .config import Config
+from typing import TYPE_CHECKING
 
 
 if TYPE_CHECKING:
     from collections.abc import Generator
+    from typing import Any
 
     from pygame.sprite import Group
 
     from .agent import Agent
+    from .config import Config
 
 
 class ProximityEngine[ConfigClass: Config = Config]:

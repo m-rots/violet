@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import pygame as pg
 
@@ -8,6 +8,8 @@ from .config import Window
 
 
 if TYPE_CHECKING:
+    from typing import Any
+
     from polars import DataFrame, Series
 
 
