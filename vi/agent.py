@@ -76,19 +76,16 @@ class Agent(Sprite, Generic[ConfigClass]):
 
     move: Vector2
     """A two-dimensional vector representing the delta between the agent's current and next position.
-    In collective intelligence scenarios, it represents the agent's velocity.
 
     Note that `move` isn't added to the agent's `pos` automatically.
     Instead, you should manually add the move delta to `pos`, like so:
 
-    >>> self.pos += self.move * delta_time
+    ```python
+    self.pos += self.move
+    ```
 
-    Where `delta_time` is the time elapsed during the movement (usually user defined).
-    Read https://gafferongames.com/post/integration_basics/ to learn more about it.
-
-    Declaring move as `Vector2(2, 1)` indicates that the agent will be moving 2 pixels along the x axis and
-    1 pixel along the y axis. You can use the `Vector2` class to calculate its magnitude by calling `length`
-    which returns the speed or rate of change of the agent's position for collective intelligence scenarios.
+    The vector `Vector2(2, 1)` indicates that the agent will be moving 2 pixels along the x axis and 1 pixel along the y axis.
+    You can use the `Vector2` class to calculate the vector's magnitude.
 
     This property is also used to automatically rotate the agent's image
     when `vi.config.Schema.image_rotation` is enabled.
@@ -278,13 +275,15 @@ class Agent(Sprite, Generic[ConfigClass]):
         --------
         An agent that will always move to the right, until snapped back to reality.
 
-        >>> class MyAgent(Agent):
-        ...     def on_spawn(self):
-        ...         self.move = Vector2((5, 0))
-        ...
-        ...     def change_position(self):
-        ...         self.there_is_no_escape()
-        ...         self.pos += self.move
+        ```python
+        class MyAgent(Agent):
+            def on_spawn(self):
+                self.move = Vector2((5, 0))
+
+            def change_position(self):
+                self.there_is_no_escape()
+                self.pos += self.move
+        ```
 
         """
         changed = False
@@ -465,7 +464,7 @@ class Agent(Sprite, Generic[ConfigClass]):
 
         ```python
         class SiteInspector(Agent):
-            def update(self):
+            def update(self) -> None:
                 site_id = self.on_site_id()
 
                 # Save the site id to the DataFrame
@@ -503,7 +502,10 @@ class Agent(Sprite, Generic[ConfigClass]):
 
         If you want to change the agent's image to the second image in the images list,
         then you can change the image to index 1:
-        >>> self.change_image(1)
+
+        ```python
+        self.change_image(1)
+        ```
         """
         self._image_index = index
 

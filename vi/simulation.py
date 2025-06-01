@@ -20,13 +20,15 @@ If you want to spice things up, you can also add obstacles and sites to your sim
 
 To customise your simulation, you can provide a `vi.config.Config` to the simulation's constructor.
 
->>> from vi import Agent, Config, Simulation
->>>
->>> (
-...     Simulation(Config(duration=60 * 10, image_rotation=True))
-...     .batch_spawn_agents(100, Agent, ["examples/images/white.png"])
-...     .run()
-... )
+```python
+from vi import Agent, Config, Simulation
+
+(
+    Simulation(Config(duration=60 * 10, image_rotation=True))
+    .batch_spawn_agents(100, Agent, ["examples/images/white.png"])
+    .run()
+)
+```
 
 Once you're finished setting up your experiment
 and want to start researching different parameters,
@@ -96,33 +98,37 @@ class HeadlessSimulation(Generic[ConfigClass]):
     When combined with [multiprocessing](https://docs.python.org/3/library/multiprocessing.html),
     we can run multiple configs in parallel.
 
-    >>> from multiprocessing import Pool
-    >>> from vi import Agent, Config, HeadlessSimulation, Matrix
-    >>> import polars as pl
-    >>>
-    >>>
-    >>> def run_simulation(config: Config) -> pl.DataFrame:
-    ...     return (
-    ...         HeadlessSimulation(config)
-    ...         .batch_spawn_agents(100, Agent, ["examples/images/white.png"])
-    ...         .run()
-    ...         .snapshots
-    ...     )
-    >>>
-    >>>
-    >>> if __name__ == "__main__":
-    ...     # We create a threadpool to run our simulations in parallel
-    ...     with Pool() as p:
-    ...         # The matrix will create four unique configs
-    ...         matrix = Matrix(radius=[25, 50], seed=[1, 2])
-    ...
-    ...         # Create unique combinations of matrix values
-    ...         configs = matrix.to_configs(Config)
-    ...
-    ...         # Combine our individual DataFrames into one big DataFrame
-    ...         df = pl.concat(p.map(run_simulation, configs))
-    ...
-    ...         print(df)
+    ```python
+    from multiprocessing import Pool
+
+    import polars as pl
+
+    from vi import Agent, Config, HeadlessSimulation, Matrix
+
+
+    def run_simulation(config: Config) -> pl.DataFrame:
+        return (
+            HeadlessSimulation(config)
+            .batch_spawn_agents(100, Agent, ["examples/images/white.png"])
+            .run()
+            .snapshots
+        )
+
+
+    if __name__ == "__main__":
+        # We create a threadpool to run our simulations in parallel
+        with Pool() as p:
+            # The matrix will create four unique configs
+            matrix = Matrix(radius=[25, 50], seed=[1, 2])
+
+            # Create unique combinations of matrix values
+            configs = matrix.to_configs(Config)
+
+            # Combine our individual DataFrames into one big DataFrame
+            df = pl.concat(p.map(run_simulation, configs))
+
+            print(df)
+    ```
     """
 
     shared: Shared
@@ -260,13 +266,16 @@ class HeadlessSimulation(Generic[ConfigClass]):
         Spawn a single obstacle into the simulation with `examples/images/bubble-full.png` as image.
         In addition, we place the obstacle in the centre of our window.
 
-        >>> config = Config()
-        >>> x, y = config.window.as_tuple()
-        >>> (
-        ...     Simulation(config)
-        ...     .spawn_obstacle("examples/images/bubble-full.png", x // 2, y // 2)
-        ...     .run()
-        ... )
+        ```python
+        config = Config()
+        x, y = config.window.as_tuple()
+
+        (
+            Simulation(config)
+            .spawn_obstacle("examples/images/bubble-full.png", x // 2, y // 2)
+            .run()
+        )
+        ```
 
         """
         _StaticSprite(

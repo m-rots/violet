@@ -74,7 +74,9 @@ allowing you to implement your agent's custom behaviour simply by implementing a
 
 Let's see some inheritance in action.
 
->>> class MyAgent(Agent): ...
+```python
+class MyAgent(Agent): ...
+```
 
 Here we create a new class called `MyAgent`, which inherits the `Agent` class.
 Now, the three dots simply tells Python that we still have to add things to it.
@@ -133,9 +135,11 @@ as it is the first image in the list of images.
 Now, to change the currently selected image,
 we can call the `vi.agent.Agent.change_image` method.
 
->>> class MyAgent(Agent):
-...     def update(self):
-...         self.change_image(1)
+```python
+class MyAgent(Agent):
+    def update(self) -> None:
+        self.change_image(1)
+```
 
 Remember that the first index of a Python list is 0,
 so changing the image to index 1 actually selects our second image.
