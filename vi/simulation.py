@@ -43,21 +43,20 @@ from __future__ import annotations
 
 import random
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Generic
+from typing import TYPE_CHECKING, Any, Self
 
 import pygame as pg
 from pygame.gfxdraw import hline, vline
 from pygame.math import Vector2
 
 from ._static import _StaticSprite
-from .config import ConfigClass
+from .config import Config
 from .metrics import Metrics
 from .proximity import ProximityEngine
 
 
 if TYPE_CHECKING:
     from pygame.event import Event
-    from typing_extensions import Self
 
     from .agent import Agent
 
@@ -84,7 +83,7 @@ class Shared:
     """A counter that increases each tick of the simulation."""
 
 
-class HeadlessSimulation(Generic[ConfigClass]):
+class HeadlessSimulation[ConfigClass: Config = Config]:
     """The Headless Mode equivalent of `Simulation`.
 
     Headless Mode removes all the rendering logic from the simulation
@@ -410,7 +409,7 @@ class HeadlessSimulation(Generic[ConfigClass]):
         return site_id
 
 
-class Simulation(Generic[ConfigClass], HeadlessSimulation[ConfigClass]):
+class Simulation[ConfigClass: Config = Config](HeadlessSimulation[ConfigClass]):
     """Offers the same functionality as `HeadlessSimulation`, but adds logic to automatically draw all agents, obstacles and sites to your screen.
 
     If a custom config isn't provided when creating the simulation, the default values of `Config` will be used instead.

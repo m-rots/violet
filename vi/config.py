@@ -3,17 +3,15 @@ from __future__ import annotations
 from copy import deepcopy
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Generic, TypeGuard
+from typing import Any, Self, TypeIs
 
 from serde.de import deserialize
 from serde.se import serialize
 from serde.toml import from_toml
-from typing_extensions import Self, TypeVar
 
 
 __all__ = [
     "Config",
-    "ConfigClass",
     "Matrix",
     "Schema",
     "Window",
@@ -32,7 +30,7 @@ def _embiggen(input_list: list[Any], copies: int) -> None:
         input_list.extend(deepcopy(head))
 
 
-def _is_list(obj: Any) -> TypeGuard[list[Any]]:  # noqa: ANN401
+def _is_list(obj: Any) -> TypeIs[list[Any]]:  # noqa: ANN401
     return isinstance(obj, list)
 
 
@@ -94,16 +92,14 @@ class Window:
         return (self.width, self.height)
 
 
-T = TypeVar("T", bound="Config")
-
-MatrixInt = TypeVar("MatrixInt", int, list[int])
-MatrixFloat = TypeVar("MatrixFloat", float, list[float])
+MatrixInt = int | list[int]
+MatrixFloat = float | list[float]
 
 
 @deserialize
 @serialize
 @dataclass
-class Schema(Generic[MatrixInt, MatrixFloat]):
+class Schema[MatrixInt, MatrixFloat]:
     """All values shared between `Config` and `Matrix`.
 
     The `Schema` contains all the default values and descriptions for the various configuration options.
@@ -403,7 +399,7 @@ class Matrix(Schema[list[int], list[float]]):
 
     """
 
-    def to_configs(self, config: type[T]) -> list[T]:
+    def to_configs[T: "Config"](self, config: type[T]) -> list[T]:
         """Generate a config for every unique combination of values in the matrix."""
         return [config(**values) for values in _matrixify(vars(self))]
 
@@ -460,6 +456,3 @@ class Config(Schema[int, float]):
     ```
 
     """
-
-
-ConfigClass = TypeVar("ConfigClass", bound=Config, default=Config)

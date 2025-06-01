@@ -8,13 +8,16 @@ from pygame.sprite import Group, Sprite
 from .util import round_pos
 
 
+__all__ = ["_StaticSprite"]
+
 if TYPE_CHECKING:
     from pygame.mask import Mask
     from pygame.math import Vector2
     from pygame.rect import Rect
     from pygame.surface import Surface
-
-__all__ = ["_StaticSprite"]
+    GenericGroup = Group[Any]
+else:
+    GenericGroup = Group
 
 
 class _StaticSprite(Sprite):
@@ -26,7 +29,7 @@ class _StaticSprite(Sprite):
 
     def __init__(
         self,
-        containers: list[Group[Any]],
+        containers: list[GenericGroup],
         id: int,  # noqa: A002
         image: Surface,
         pos: Vector2,

@@ -6,13 +6,13 @@ Inheriting the Agent class allows you to modify the behaviour of the agents in t
 from __future__ import annotations
 
 from copy import copy
-from typing import TYPE_CHECKING, Any, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, Self
 
 import pygame as pg
 from pygame.math import Vector2
 from pygame.sprite import Group, Sprite
 
-from .config import ConfigClass
+from .config import Config
 from .util import random_angle, random_pos, round_pos
 
 
@@ -22,7 +22,6 @@ if TYPE_CHECKING:
     from pygame.mask import Mask
     from pygame.rect import Rect
     from pygame.surface import Surface
-    from typing_extensions import Self
 
     from ._static import _StaticSprite
     from .simulation import HeadlessSimulation, Shared
@@ -32,10 +31,8 @@ __all__ = [
     "Agent",
 ]
 
-T = TypeVar("T")
 
-
-class Agent(Sprite, Generic[ConfigClass]):
+class Agent[ConfigClass: Config = Config](Sprite):
     """The `Agent` class is home to Violet's various additions and is built on top of [PyGame's Sprite](https://www.pygame.org/docs/ref/sprite.html) class.
 
     While you can simply add this `Agent` class to your simulations by calling `batch_spawn_agents`,
@@ -206,7 +203,7 @@ class Agent(Sprite, Generic[ConfigClass]):
     def obstacle_intersections(
         self,
         scale: float = 1,
-    ) -> Generator[Vector2, None, None]:
+    ) -> Generator[Vector2]:
         """Retrieve the centre coordinates of all obstacle intersections.
 
         If you not only want to check for obstacle collision,
@@ -362,7 +359,7 @@ class Agent(Sprite, Generic[ConfigClass]):
 
     def in_proximity_accuracy(
         self,
-    ) -> Generator[tuple[Agent[ConfigClass], float], None, None]:
+    ) -> Generator[tuple[Agent[ConfigClass], float]]:
         """Retrieve other agents that are in the `vi.config.Schema.radius` of the current agent.
 
         This proximity method calculates the distances between agents to determine whether
@@ -423,7 +420,7 @@ class Agent(Sprite, Generic[ConfigClass]):
 
     def in_proximity_performance(
         self,
-    ) -> Generator[Agent[ConfigClass], None, None]:
+    ) -> Generator[Agent[ConfigClass]]:
         """Retrieve other agents that are in the `vi.config.Schema.radius` of the current agent.
 
         Unlike `in_proximity_accuracy`, this proximity method does not calculate the distances between agents.

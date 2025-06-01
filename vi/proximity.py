@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import collections
-from typing import TYPE_CHECKING, Any, Generic
+from typing import TYPE_CHECKING, Any
 
-from .config import ConfigClass
+from .config import Config
 
 
 if TYPE_CHECKING:
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from .agent import Agent
 
 
-class ProximityEngine(Generic[ConfigClass]):
+class ProximityEngine[ConfigClass: Config = Config]:
     __agents: Group[Any]
 
     __chunks: dict[tuple[int, int], set[Agent[ConfigClass]]]
@@ -58,7 +58,7 @@ class ProximityEngine(Generic[ConfigClass]):
     def in_proximity_performance(
         self,
         agent: Agent[ConfigClass],
-    ) -> Generator[Agent[ConfigClass], None, None]:
+    ) -> Generator[Agent[ConfigClass]]:
         """Retrieve a set of agents that are in the same chunk as the given agent."""
         chunk = self.__get_chunk(agent.center)
 
@@ -69,7 +69,7 @@ class ProximityEngine(Generic[ConfigClass]):
     def in_proximity_accuracy(
         self,
         agent: Agent[ConfigClass],
-    ) -> Generator[tuple[Agent[ConfigClass], float], None, None]:
+    ) -> Generator[tuple[Agent[ConfigClass], float]]:
         """Retrieve a set of agents that are in the same chunk as the given agent, in addition to the agents in the eight neighbouring chunks."""
         x, y = agent.center
 

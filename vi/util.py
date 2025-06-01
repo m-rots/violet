@@ -8,11 +8,8 @@ from pygame.math import Vector2
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
-    from typing import TypeVar
 
     from pygame.rect import Rect
-
-    T = TypeVar("T")
 
 
 __all__ = [
@@ -59,7 +56,7 @@ def random_pos(area: Rect, prng: random.Random | None = None) -> Vector2:
     return Vector2(x, y)
 
 
-def first(iterator: Iterator[T]) -> T | None:
+def first[T](iterator: Iterator[T]) -> T | None:
     """Returns the first element in an iterator.
 
     Returns None if the iterator contains no elements.
@@ -67,7 +64,7 @@ def first(iterator: Iterator[T]) -> T | None:
     return next(iterator, None)
 
 
-def count(iterator: Iterator[T]) -> int:
+def count[T](iterator: Iterator[T]) -> int:
     """Count the number of elements in an iterator.
 
     An alternative way to count the number of elements in an iterator is to collect all the elements
