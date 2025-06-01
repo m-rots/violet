@@ -8,8 +8,6 @@ license = "MIT"
 dependencies = [
     "pygame~=2.6",
     "polars~=1.2",
-    "pyserde[toml]~=0.24",
-    "typing-extensions~=4.12",
 ]
 
 [[project.authors]]
@@ -30,7 +28,10 @@ module-name = "vi"
 module-root = ""
 
 [dependency-groups]
-dev = ["pdoc~=15.0"]
+dev = [
+    "pdoc~=15.0",
+    "pyserde[toml]~=0.24",
+]
 
 [tool.pyright]
 include = ["examples", "vi"]

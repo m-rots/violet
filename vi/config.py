@@ -2,12 +2,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Any, Self, TypeIs
-
-from serde.de import deserialize
-from serde.se import serialize
-from serde.toml import from_toml
 
 
 __all__ = [
@@ -15,10 +10,6 @@ __all__ = [
     "Matrix",
     "Schema",
     "Window",
-    "dataclass",
-    "deserialize",
-    "from_toml",
-    "serialize",
 ]
 
 
@@ -72,8 +63,6 @@ def _matrixify(matrix: dict[str, Any | list[Any]]) -> list[dict[str, Any]]:  # n
     return combinations
 
 
-@deserialize
-@serialize
 @dataclass
 class Window:
     """Settings related to the simulation window."""
@@ -96,8 +85,6 @@ MatrixInt = int | list[int]
 MatrixFloat = float | list[float]
 
 
-@deserialize
-@serialize
 @dataclass
 class Schema[MatrixInt, MatrixFloat]:
     """All values shared between `Config` and `Matrix`.
@@ -255,15 +242,7 @@ class Schema[MatrixInt, MatrixFloat]:
     window: Window = field(default_factory=Window)
     """The simulation window"""
 
-    @classmethod
-    def from_file(cls, file_name: str) -> Self:
-        """Load the config from a TOML file. The config doesn't have to include all attributes, only those which you want to override."""
-        with Path(file_name).open() as f:
-            return from_toml(cls, f.read())
 
-
-@deserialize
-@serialize
 @dataclass
 class Matrix(Schema[list[int], list[float]]):
     """`Matrix` is the `Config` class on steroids.
@@ -404,8 +383,6 @@ class Matrix(Schema[list[int], list[float]]):
         return [config(**values) for values in _matrixify(vars(self))]
 
 
-@deserialize
-@serialize
 @dataclass
 class Config(Schema[int, float]):
     """The `Config` class allows you to tweak the settings of your experiment.

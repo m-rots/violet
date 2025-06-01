@@ -6,7 +6,7 @@
 - Matrix-powered multi-threaded configuration testing
 - [Polars](https://github.com/pola-rs/polars/)-powered simulation analytics
 - Replay-able simulations with a ✨ time machine ✨
-- Type-safe configuration system (with TOML support)
+- Type-safe configuration system
 
 Want to get started right away?
 Check out the [Violet Starter Kit](https://github.com/m-rots/violet-starter-kit)!
@@ -174,18 +174,11 @@ But this should give you an impression on how to change the behaviour of your ag
 Explore some of the modules on the left and experiment away!
 """
 
-from dataclasses import dataclass
-
-from pygame.math import Vector2
-from serde.de import deserialize
-from serde.se import serialize
-
 from .agent import Agent
 from .config import Config, Matrix, Window
 from .metrics import Fps, Metrics
 from .replay import TimeMachine
 from .simulation import HeadlessSimulation, Simulation
-from .util import count, first, probability
 
 
 __all__ = [
@@ -197,12 +190,10 @@ __all__ = [
     "Metrics",
     "Simulation",
     "TimeMachine",
-    "Vector2",
     "Window",
-    "count",
-    "dataclass",
-    "deserialize",
-    "first",
-    "probability",
-    "serialize",
+    "agent",
+    "config",
+    "metrics",
+    "simulation",
+    "util",  # type: ignore[reportUnsupportedDunderAll]
 ]

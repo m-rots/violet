@@ -249,22 +249,22 @@ source = { editable = "." }
 dependencies = [
     { name = "polars" },
     { name = "pygame" },
-    { name = "pyserde", extra = ["toml"] },
-    { name = "typing-extensions" },
 ]
 
 [package.dev-dependencies]
 dev = [
     { name = "pdoc" },
+    { name = "pyserde", extra = ["toml"] },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "polars", specifier = "~=1.2" },
     { name = "pygame", specifier = "~=2.6" },
-    { name = "pyserde", extras = ["toml"], specifier = "~=0.24" },
-    { name = "typing-extensions", specifier = "~=4.12" },
 ]
 
 [package.metadata.requires-dev]
-dev = [{ name = "pdoc", specifier = "~=15.0" }]
+dev = [
+    { name = "pdoc", specifier = "~=15.0" },
+    { name = "pyserde", extras = ["toml"], specifier = "~=0.24" },
+]
