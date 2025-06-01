@@ -1,13 +1,14 @@
 import polars as pl
 
 from vi import Agent, Config, Simulation
+from vi.util import count
 
 
 class MyAgent(Agent):
     def update(self) -> None:
         # As accurate proximity calculation is quite performance heavy,
         # we only calculate it once per frame.
-        in_radius = self.in_proximity_accuracy().count()
+        in_radius = count(self.in_proximity_accuracy())
 
         # We want to keep track of how many other agents were in our agent's radius,
         # so we add data to the `in_radius` column of our dataframe!

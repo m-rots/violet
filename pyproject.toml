@@ -1,15 +1,13 @@
 [project]
 name = "violet-simulator"
-version = "0.2.5"
+version = "0.3.0"
 description = "A smol simulator framework built on top of PyGame"
-requires-python = ">=3.10"
+requires-python = ">=3.13"
 readme = "README.md"
 license = "MIT"
 dependencies = [
     "pygame~=2.6",
     "polars~=1.2",
-    "pyserde[toml]~=0.24",
-    "typing-extensions~=4.12",
 ]
 
 [[project.authors]]
@@ -30,7 +28,10 @@ module-name = "vi"
 module-root = ""
 
 [dependency-groups]
-dev = ["pdoc~=15.0"]
+dev = [
+    "pdoc~=15.0",
+    "pyserde[toml]~=0.24",
+]
 
 [tool.pyright]
 include = ["examples", "vi"]

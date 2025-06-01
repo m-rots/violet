@@ -6,26 +6,26 @@ Inheriting the Agent class allows you to modify the behaviour of the agents in t
 from __future__ import annotations
 
 from copy import copy
-from typing import TYPE_CHECKING, Any, Generic
+from typing import TYPE_CHECKING
 
 import pygame as pg
 from pygame.math import Vector2
-from pygame.sprite import Group, Sprite
+from pygame.sprite import Sprite
 
-from .config import ConfigClass
 from .util import random_angle, random_pos, round_pos
 
 
 if TYPE_CHECKING:
     from collections.abc import Generator
+    from typing import Any, Self
 
     from pygame.mask import Mask
     from pygame.rect import Rect
+    from pygame.sprite import Group
     from pygame.surface import Surface
-    from typing_extensions import Self
 
     from ._static import _StaticSprite
-    from .proximity import ProximityIter
+    from .config import Config
     from .simulation import HeadlessSimulation, Shared
 
 
@@ -34,7 +34,7 @@ __all__ = [
 ]
 
 
-class Agent(Sprite, Generic[ConfigClass]):
+class Agent[ConfigClass: Config = Config](Sprite):
     """The `Agent` class is home to Violet's various additions and is built on top of [PyGame's Sprite](https://www.pygame.org/docs/ref/sprite.html) class.
 
     While you can simply add this `Agent` class to your simulations by calling `batch_spawn_agents`,
@@ -56,7 +56,7 @@ class Agent(Sprite, Generic[ConfigClass]):
     However, the config must always:
 
     1. Inherit `Config`
-    2. Be decorated by `@deserialize` and `@dataclass`
+    2. Be decorated by `@dataclass`
     """
 
     shared: Shared
@@ -75,19 +75,16 @@ class Agent(Sprite, Generic[ConfigClass]):
 
     move: Vector2
     """A two-dimensional vector representing the delta between the agent's current and next position.
-    In collective intelligence scenarios, it represents the agent's velocity.
 
     Note that `move` isn't added to the agent's `pos` automatically.
     Instead, you should manually add the move delta to `pos`, like so:
 
-    >>> self.pos += self.move * delta_time
+    ```python
+    self.pos += self.move
+    ```
 
-    Where `delta_time` is the time elapsed during the movement (usually user defined).
-    Read https://gafferongames.com/post/integration_basics/ to learn more about it.
-
-    Declaring move as `Vector2(2, 1)` indicates that the agent will be moving 2 pixels along the x axis and
-    1 pixel along the y axis. You can use the `Vector2` class to calculate its magnitude by calling `length`
-    which returns the speed or rate of change of the agent's position for collective intelligence scenarios.
+    The vector `Vector2(2, 1)` indicates that the agent will be moving 2 pixels along the x axis and 1 pixel along the y axis.
+    You can use the `Vector2` class to calculate the vector's magnitude.
 
     This property is also used to automatically rotate the agent's image
     when `vi.config.Schema.image_rotation` is enabled.
@@ -208,7 +205,7 @@ class Agent(Sprite, Generic[ConfigClass]):
     def obstacle_intersections(
         self,
         scale: float = 1,
-    ) -> Generator[Vector2, None, None]:
+    ) -> Generator[Vector2]:
         """Retrieve the centre coordinates of all obstacle intersections.
 
         If you not only want to check for obstacle collision,
@@ -277,13 +274,15 @@ class Agent(Sprite, Generic[ConfigClass]):
         --------
         An agent that will always move to the right, until snapped back to reality.
 
-        >>> class MyAgent(Agent):
-        ...     def on_spawn(self):
-        ...         self.move = Vector2((5, 0))
-        ...
-        ...     def change_position(self):
-        ...         self.there_is_no_escape()
-        ...         self.pos += self.move
+        ```python
+        class MyAgent(Agent):
+            def on_spawn(self):
+                self.move = Vector2((5, 0))
+
+            def change_position(self):
+                self.there_is_no_escape()
+                self.pos += self.move
+        ```
 
         """
         changed = False
@@ -360,7 +359,9 @@ class Agent(Sprite, Generic[ConfigClass]):
         # Actually update the position at last.
         self.pos += self.move
 
-    def in_proximity_accuracy(self) -> ProximityIter[tuple[Agent[ConfigClass], float]]:
+    def in_proximity_accuracy(
+        self,
+    ) -> Generator[tuple[Agent[ConfigClass], float]]:
         """Retrieve other agents that are in the `vi.config.Schema.radius` of the current agent.
 
         This proximity method calculates the distances between agents to determine whether
@@ -374,54 +375,54 @@ class Agent(Sprite, Generic[ConfigClass]):
         consider using the `in_proximity_performance` method instead.
 
         This function doesn't return the agents as a `list` or as a `set`.
-        Instead, you are given a `vi.proximity.ProximityIter`, a small wrapper around a Python generator.
+        Instead, you are given a generator.
 
         Examples
         --------
         Count the number of agents that are in proximity
         and change to image `1` if there is at least one agent nearby.
 
-        >>> class MyAgent(Agent):
-        ...     def update(self):
-        ...         in_proximity = self.in_proximity_accuracy().count()
-        ...
-        ...         if in_proximity >= 1:
-        ...             self.change_image(1)
-        ...         else:
-        ...             self.change_image(0)
+        ```python
+        from vi.util import count
+
+
+        class MyAgent(Agent):
+            def update(self) -> None:
+                if count(self.in_proximity_accuracy()) >= 1:
+                    self.change_image(1)
+                else:
+                    self.change_image(0)
+        ```
 
         Kill the first `Human` agent that's in proximity.
 
-        >>> class Zombie(Agent):
-        ...     def update(self):
-        ...         human = (
-        ...             self.in_proximity_accuracy()
-        ...             .without_distance()
-        ...             .filter_kind(Human) # 👈 don't want to kill other zombies
-        ...             .first() # 👈 can return None if no humans are around
-        ...         )
-        ...
-        ...         if human is not None:
-        ...             human.kill()
+        ```python
+        class Zombie(Agent):
+            def update(self) -> None:
+                for agent, _ in self.in_proximity_accuracy():
+                    # Don't want to kill other zombies
+                    if isinstance(Agent, Human):
+                        agent.kill()
+                        break
+        ```
 
         Calculate the average distance of agents that are in proximity.
 
-        >>> class Heimerdinger(Agent):
-        ...     def update(self):
-        ...         in_proximity = list(self.in_proximity_accuracy())
-        ...
-        ...         dist_sum = sum(dist for agent, dist in in_proximity)
-        ...
-        ...         dist_avg = (
-        ...             dist_sum / len(in_proximity)
-        ...             if len(in_proximity) > 0
-        ...             else 0
-        ...         )
+        ```python
+        from statistics import fmean
+
+        class Heimerdinger(Agent):
+            def update(self) -> None:
+                distances = [dist for _, dist in self.in_proximity_accuracy()]
+                dist_mean = fmean(distances) if len(distances) > 0 else 0
+        ```
 
         """
         return self.__simulation._proximity.in_proximity_accuracy(self)
 
-    def in_proximity_performance(self) -> ProximityIter[Agent[ConfigClass]]:
+    def in_proximity_performance(
+        self,
+    ) -> Generator[Agent[ConfigClass]]:
         """Retrieve other agents that are in the `vi.config.Schema.radius` of the current agent.
 
         Unlike `in_proximity_accuracy`, this proximity method does not calculate the distances between agents.
@@ -441,11 +442,13 @@ class Agent(Sprite, Generic[ConfigClass]):
         --------
         Stop the agent's movement when it reaches a site (think of a nice beach).
 
-        >>> class TravellingAgent(Agent):
-        ...     def update(self):
-        ...         if self.on_site():
-        ...             # crave that star damage
-        ...             self.freeze_movement()
+        ```python
+        class TravellingAgent(Agent):
+            def update(self) -> None:
+                if self.on_site():
+                    # crave that star damage
+                    self.freeze_movement()
+        ```
 
         """
         return self.on_site_id() is not None
@@ -460,7 +463,7 @@ class Agent(Sprite, Generic[ConfigClass]):
 
         ```python
         class SiteInspector(Agent):
-            def update(self):
+            def update(self) -> None:
                 site_id = self.on_site_id()
 
                 # Save the site id to the DataFrame
@@ -498,7 +501,10 @@ class Agent(Sprite, Generic[ConfigClass]):
 
         If you want to change the agent's image to the second image in the images list,
         then you can change the image to index 1:
-        >>> self.change_image(1)
+
+        ```python
+        self.change_image(1)
+        ```
         """
         self._image_index = index
 
@@ -514,10 +520,16 @@ class Agent(Sprite, Generic[ConfigClass]):
         --------
         Saving the number of agents that are currently in proximity:
 
-        >>> class MyAgent(Agent):
-        ...     def update(self):
-        ...         in_proximity = self.in_proximity_accuracy().count()
-        ...         self.save_data("in_proximity", in_proximity)
+        ```python
+        from vi.util import count
+
+
+        class MyAgent(Agent):
+            def update(self) -> None:
+                in_proximity = count(self.in_proximity_accuracy())
+
+                self.save_data("in_proximity", in_proximity)
+        ```
 
         """
         self.__simulation._metrics._temporary_snapshots[column].append(value)

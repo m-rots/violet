@@ -12,6 +12,7 @@ To print a preview of the DataFrame, simply access the `snapshots` property.
 
 >>> from vi import Agent, Config, Simulation
 >>>
+>>>
 >>> print(
 ...     Simulation(Config(duration=60, seed=1))
 ...     .batch_spawn_agents(100, Agent, images=["examples/images/white.png"])
@@ -48,6 +49,7 @@ then it makes sense to save the `snapshots` property to a variable.
 In addition, we can utilise `vi.simulation.HeadlessSimulation` to hide our simulation's window and improve performance.
 
 >>> from vi import Agent, Config, HeadlessSimulation
+>>>
 >>>
 >>> df = ( # 👈 assign to variable
 ...     HeadlessSimulation(Config(duration=60, seed=1))
@@ -91,6 +93,7 @@ To calculate the mean `x` and `y` coordinate (over all agents) for every `frame`
 we simply add two expressions to our aggregation.
 
 >>> import polars as pl
+>>>
 >>>
 >>> print(
 ...     df.groupby("frame", maintain_order=True)
@@ -182,10 +185,13 @@ from __future__ import annotations
 
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING
 
 import polars as pl
 
+
+if TYPE_CHECKING:
+    from typing import Any
 
 __all__ = [
     "Fps",

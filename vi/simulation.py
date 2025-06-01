@@ -1,7 +1,9 @@
 """Creating a new `Simulation` is as simple as adding two lines of code to a Python file:
 
->>> from vi import Simulation
->>> Simulation().run()
+```python
+from vi import Config, Simulation
+Simulation(Config()).run()
+```
 
 To add some agents to your simulation, you have two tools available to you:
 1. `HeadlessSimulation.batch_spawn_agents`
@@ -18,13 +20,15 @@ If you want to spice things up, you can also add obstacles and sites to your sim
 
 To customise your simulation, you can provide a `vi.config.Config` to the simulation's constructor.
 
->>> from vi import Agent, Config, Simulation
->>>
->>> (
-...     Simulation(Config(duration=60 * 10, image_rotation=True))
-...     .batch_spawn_agents(100, Agent, ["examples/images/white.png"])
-...     .run()
-... )
+```python
+from vi import Agent, Config, Simulation
+
+(
+    Simulation(Config(duration=60 * 10, image_rotation=True))
+    .batch_spawn_agents(100, Agent, ["examples/images/white.png"])
+    .run()
+)
+```
 
 Once you're finished setting up your experiment
 and want to start researching different parameters,
@@ -39,23 +43,24 @@ from __future__ import annotations
 
 import random
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Generic
+from typing import TYPE_CHECKING
 
 import pygame as pg
 from pygame.gfxdraw import hline, vline
 from pygame.math import Vector2
 
 from ._static import _StaticSprite
-from .config import ConfigClass
 from .metrics import Metrics
 from .proximity import ProximityEngine
 
 
 if TYPE_CHECKING:
+    from typing import Any, Self
+
     from pygame.event import Event
-    from typing_extensions import Self
 
     from .agent import Agent
+    from .config import Config
 
 
 __all__ = [
@@ -80,7 +85,7 @@ class Shared:
     """A counter that increases each tick of the simulation."""
 
 
-class HeadlessSimulation(Generic[ConfigClass]):
+class HeadlessSimulation[ConfigClass: Config]:
     """The Headless Mode equivalent of `Simulation`.
 
     Headless Mode removes all the rendering logic from the simulation
@@ -94,33 +99,37 @@ class HeadlessSimulation(Generic[ConfigClass]):
     When combined with [multiprocessing](https://docs.python.org/3/library/multiprocessing.html),
     we can run multiple configs in parallel.
 
-    >>> from multiprocessing import Pool
-    >>> from vi import Agent, Config, HeadlessSimulation, Matrix
-    >>> import polars as pl
-    >>>
-    >>>
-    >>> def run_simulation(config: Config) -> pl.DataFrame:
-    ...     return (
-    ...         HeadlessSimulation(config)
-    ...         .batch_spawn_agents(100, Agent, ["examples/images/white.png"])
-    ...         .run()
-    ...         .snapshots
-    ...     )
-    >>>
-    >>>
-    >>> if __name__ == "__main__":
-    ...     # We create a threadpool to run our simulations in parallel
-    ...     with Pool() as p:
-    ...         # The matrix will create four unique configs
-    ...         matrix = Matrix(radius=[25, 50], seed=[1, 2])
-    ...
-    ...         # Create unique combinations of matrix values
-    ...         configs = matrix.to_configs(Config)
-    ...
-    ...         # Combine our individual DataFrames into one big DataFrame
-    ...         df = pl.concat(p.map(run_simulation, configs))
-    ...
-    ...         print(df)
+    ```python
+    from multiprocessing import Pool
+
+    import polars as pl
+
+    from vi import Agent, Config, HeadlessSimulation, Matrix
+
+
+    def run_simulation(config: Config) -> pl.DataFrame:
+        return (
+            HeadlessSimulation(config)
+            .batch_spawn_agents(100, Agent, ["examples/images/white.png"])
+            .run()
+            .snapshots
+        )
+
+
+    if __name__ == "__main__":
+        # We create a threadpool to run our simulations in parallel
+        with Pool() as p:
+            # The matrix will create four unique configs
+            matrix = Matrix(radius=[25, 50], seed=[1, 2])
+
+            # Create unique combinations of matrix values
+            configs = matrix.to_configs(Config)
+
+            # Combine our individual DataFrames into one big DataFrame
+            df = pl.concat(p.map(run_simulation, configs))
+
+            print(df)
+    ```
     """
 
     shared: Shared
@@ -203,11 +212,13 @@ class HeadlessSimulation(Generic[ConfigClass]):
         --------
         Spawn 100 `vi.agent.Agent`'s into the simulation with `examples/images/white.png` as image.
 
-        >>> (
-        ...     Simulation()
-        ...     .batch_spawn_agents(100, Agent, ["examples/images/white.png"])
-        ...     .run()
-        ... )
+        ```python
+        (
+            Simulation(Config())
+            .batch_spawn_agents(100, Agent, ["examples/images/white.png"])
+            .run()
+        )
+        ```
 
         """
         # Load images once so the files don't have to be read multiple times.
@@ -233,11 +244,13 @@ class HeadlessSimulation(Generic[ConfigClass]):
         --------
         Spawn a single `vi.agent.Agent` into the simulation with `examples/images/white.png` as image:
 
-        >>> (
-        ...     Simulation()
-        ...     .spawn_agent(Agent, ["examples/images/white.png"])
-        ...     .run()
-        ... )
+        ```python
+        (
+            Simulation(Config())
+            .spawn_agent(Agent, ["examples/images/white.png"])
+            .run()
+        )
+        ```
 
         """
         agent_class(images=self._load_images(images), simulation=self)
@@ -254,13 +267,16 @@ class HeadlessSimulation(Generic[ConfigClass]):
         Spawn a single obstacle into the simulation with `examples/images/bubble-full.png` as image.
         In addition, we place the obstacle in the centre of our window.
 
-        >>> config = Config()
-        >>> x, y = config.window.as_tuple()
-        >>> (
-        ...     Simulation(config)
-        ...     .spawn_obstacle("examples/images/bubble-full.png", x // 2, y // 2)
-        ...     .run()
-        ... )
+        ```python
+        config = Config()
+        x, y = config.window.as_tuple()
+
+        (
+            Simulation(config)
+            .spawn_obstacle("examples/images/bubble-full.png", x // 2, y // 2)
+            .run()
+        )
+        ```
 
         """
         _StaticSprite(
@@ -280,11 +296,13 @@ class HeadlessSimulation(Generic[ConfigClass]):
         Spawn a single site into the simulation with `examples/images/site.png` as image.
         In addition, we give specific coordinates where the site should be placed.
 
-        >>> (
-        ...     Simulation(config)
-        ...     .spawn_site("examples/images/site.png", x=375, y=375)
-        ...     .run()
-        ... )
+        ```python
+        (
+            Simulation(Config())
+            .spawn_site("examples/images/site.png", x=375, y=375)
+            .run()
+        )
+        ```
 
         """
         _StaticSprite(
@@ -393,7 +411,7 @@ class HeadlessSimulation(Generic[ConfigClass]):
         return site_id
 
 
-class Simulation(Generic[ConfigClass], HeadlessSimulation[ConfigClass]):
+class Simulation[ConfigClass: Config](HeadlessSimulation[ConfigClass]):
     """Offers the same functionality as `HeadlessSimulation`, but adds logic to automatically draw all agents, obstacles and sites to your screen.
 
     If a custom config isn't provided when creating the simulation, the default values of `Config` will be used instead.
