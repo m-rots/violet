@@ -2,7 +2,7 @@ from vi import Agent, Config, Simulation
 
 
 class Spinning(Agent):
-    def change_position(self):
+    def change_position(self) -> None:
         self.move.rotate_ip(1)
 
 
@@ -11,5 +11,5 @@ print(
     .batch_spawn_agents(1500, Spinning, images=["examples/images/rect.png"])
     .run()
     .fps.to_polars()
-    .describe()
+    .describe(),
 )

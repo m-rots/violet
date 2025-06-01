@@ -7,10 +7,17 @@ from pygame.math import Vector2
 
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+    from typing import TypeVar
+
     from pygame.rect import Rect
+
+    T = TypeVar("T")
 
 
 __all__ = [
+    "count",
+    "first",
     "probability",
     "random_angle",
     "random_pos",
@@ -50,3 +57,27 @@ def random_pos(area: Rect, prng: random.Random | None = None) -> Vector2:
     x = uniform(area.left, area.right)
     y = uniform(area.top, area.bottom)
     return Vector2(x, y)
+
+
+def first(iterator: Iterator[T]) -> T | None:
+    """Returns the first element in an iterator.
+
+    Returns None if the iterator contains no elements.
+    """
+    return next(iterator, None)
+
+
+def count(iterator: Iterator[T]) -> int:
+    """Count the number of elements in an iterator.
+
+    An alternative way to count the number of elements in an iterator is to collect all the elements
+    in a list first and then retrieve its length. However, a memory allocation will be used, which
+    can hurt performance.
+
+    ```python
+    class MyAgent(Agent):
+        def update(self) -> None:
+            count = len(list(self.in_proximity_accuracy()))
+    ```
+    """
+    return sum(1 for _ in iterator)

@@ -6,7 +6,7 @@ Inheriting the Agent class allows you to modify the behaviour of the agents in t
 from __future__ import annotations
 
 from copy import copy
-from typing import TYPE_CHECKING, Any, Generic
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 import pygame as pg
 from pygame.math import Vector2
@@ -25,13 +25,14 @@ if TYPE_CHECKING:
     from typing_extensions import Self
 
     from ._static import _StaticSprite
-    from .proximity import ProximityIter
     from .simulation import HeadlessSimulation, Shared
 
 
 __all__ = [
     "Agent",
 ]
+
+T = TypeVar("T")
 
 
 class Agent(Sprite, Generic[ConfigClass]):
@@ -360,7 +361,9 @@ class Agent(Sprite, Generic[ConfigClass]):
         # Actually update the position at last.
         self.pos += self.move
 
-    def in_proximity_accuracy(self) -> ProximityIter[tuple[Agent[ConfigClass], float]]:
+    def in_proximity_accuracy(
+        self,
+    ) -> Generator[tuple[Agent[ConfigClass], float], None, None]:
         """Retrieve other agents that are in the `vi.config.Schema.radius` of the current agent.
 
         This proximity method calculates the distances between agents to determine whether
@@ -374,54 +377,54 @@ class Agent(Sprite, Generic[ConfigClass]):
         consider using the `in_proximity_performance` method instead.
 
         This function doesn't return the agents as a `list` or as a `set`.
-        Instead, you are given a `vi.proximity.ProximityIter`, a small wrapper around a Python generator.
+        Instead, you are given a generator.
 
         Examples
         --------
         Count the number of agents that are in proximity
         and change to image `1` if there is at least one agent nearby.
 
-        >>> class MyAgent(Agent):
-        ...     def update(self):
-        ...         in_proximity = self.in_proximity_accuracy().count()
-        ...
-        ...         if in_proximity >= 1:
-        ...             self.change_image(1)
-        ...         else:
-        ...             self.change_image(0)
+        ```python
+        from vi.util import count
+
+
+        class MyAgent(Agent):
+            def update(self) -> None:
+                if count(self.in_proximity_accuracy()) >= 1:
+                    self.change_image(1)
+                else:
+                    self.change_image(0)
+        ```
 
         Kill the first `Human` agent that's in proximity.
 
-        >>> class Zombie(Agent):
-        ...     def update(self):
-        ...         human = (
-        ...             self.in_proximity_accuracy()
-        ...             .without_distance()
-        ...             .filter_kind(Human) # 👈 don't want to kill other zombies
-        ...             .first() # 👈 can return None if no humans are around
-        ...         )
-        ...
-        ...         if human is not None:
-        ...             human.kill()
+        ```python
+        class Zombie(Agent):
+            def update(self) -> None:
+                for agent, _ in self.in_proximity_accuracy():
+                    # Don't want to kill other zombies
+                    if isinstance(Agent, Human):
+                        agent.kill()
+                        break
+        ```
 
         Calculate the average distance of agents that are in proximity.
 
-        >>> class Heimerdinger(Agent):
-        ...     def update(self):
-        ...         in_proximity = list(self.in_proximity_accuracy())
-        ...
-        ...         dist_sum = sum(dist for agent, dist in in_proximity)
-        ...
-        ...         dist_avg = (
-        ...             dist_sum / len(in_proximity)
-        ...             if len(in_proximity) > 0
-        ...             else 0
-        ...         )
+        ```python
+        from statistics import fmean
+
+        class Heimerdinger(Agent):
+            def update(self) -> None:
+                distances = [dist for _, dist in self.in_proximity_accuracy()]
+                dist_mean = fmean(distances) if len(distances) > 0 else 0
+        ```
 
         """
         return self.__simulation._proximity.in_proximity_accuracy(self)
 
-    def in_proximity_performance(self) -> ProximityIter[Agent[ConfigClass]]:
+    def in_proximity_performance(
+        self,
+    ) -> Generator[Agent[ConfigClass], None, None]:
         """Retrieve other agents that are in the `vi.config.Schema.radius` of the current agent.
 
         Unlike `in_proximity_accuracy`, this proximity method does not calculate the distances between agents.
@@ -441,11 +444,13 @@ class Agent(Sprite, Generic[ConfigClass]):
         --------
         Stop the agent's movement when it reaches a site (think of a nice beach).
 
-        >>> class TravellingAgent(Agent):
-        ...     def update(self):
-        ...         if self.on_site():
-        ...             # crave that star damage
-        ...             self.freeze_movement()
+        ```python
+        class TravellingAgent(Agent):
+            def update(self) -> None:
+                if self.on_site():
+                    # crave that star damage
+                    self.freeze_movement()
+        ```
 
         """
         return self.on_site_id() is not None
@@ -514,10 +519,16 @@ class Agent(Sprite, Generic[ConfigClass]):
         --------
         Saving the number of agents that are currently in proximity:
 
-        >>> class MyAgent(Agent):
-        ...     def update(self):
-        ...         in_proximity = self.in_proximity_accuracy().count()
-        ...         self.save_data("in_proximity", in_proximity)
+        ```python
+        from vi.util import count
+
+
+        class MyAgent(Agent):
+            def update(self) -> None:
+                in_proximity = count(self.in_proximity_accuracy())
+
+                self.save_data("in_proximity", in_proximity)
+        ```
 
         """
         self.__simulation._metrics._temporary_snapshots[column].append(value)

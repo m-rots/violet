@@ -146,16 +146,21 @@ Instead, we only want our agents to turn red when they see at least one other ag
 
 Fortunately, Violet already keeps track of who sees who for us, so we don't have to implement any code ourselves!
 Instead, we can utilise the `vi.agent.Agent.in_proximity_accuracy` method.
-This will return a `vi.proximity.ProximityIter` which we can use to count the number of agents in proximity.
+This will return an iterator. Combined with `vi.util.count`, we can count the number of agents in proximity.
 
 Let's say that if we count at least one other agent, we turn red. Otherwise, we change the image back to white!
 
->>> class MyAgent(Agent):
-...     def update(self):
-...         if self.in_proximity_accuracy().count() >= 1:
-...             self.change_image(1)
-...         else:
-...             self.change_image(0)
+```python
+from vi.util import count
+
+
+class MyAgent(Agent):
+    def update(self) -> None:
+        if count(self.in_proximity_accuracy()) >= 1:
+            self.change_image(1)
+        else:
+            self.change_image(0)
+```
 
 And there we have it!
 A disco of a simulation with agents swapping colours whenever they get close to someone.
@@ -174,10 +179,9 @@ from serde.se import serialize
 from .agent import Agent
 from .config import Config, Matrix, Window
 from .metrics import Fps, Metrics
-from .proximity import ProximityIter
 from .replay import TimeMachine
 from .simulation import HeadlessSimulation, Simulation
-from .util import probability
+from .util import count, first, probability
 
 
 __all__ = [
@@ -187,13 +191,14 @@ __all__ = [
     "HeadlessSimulation",
     "Matrix",
     "Metrics",
-    "ProximityIter",
     "Simulation",
     "TimeMachine",
     "Vector2",
     "Window",
+    "count",
     "dataclass",
     "deserialize",
+    "first",
     "probability",
     "serialize",
 ]
