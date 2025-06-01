@@ -414,17 +414,19 @@ class Config(Schema[int, float]):
     ...     #                  👆 default value
 
     Last but not least, declare that your agent is using the `MyConfig` class
-    and pass it along to the constructor of `vi.simulation.Simulation`.
+    and pass it along to the constructor of `Simulation`.
 
-    >>> class MyAgent(Agent):
-    ...     config: MyConfig
-    >>>
-    >>> (
-    ...     #             👇 use our custom config
-    ...     Simulation(MyConfig())
-    ...     .batch_spawn_agents(100, MyAgent, ["examples/images/white.png"])
-    ...     .run()
-    ... )
+    ```python
+    #                      👇 use our custom config
+    class MyAgent(Agent[MyConfig]): ...
+
+    (
+        #             👇 here too!
+        Simulation(MyConfig())
+        .batch_spawn_agents(100, MyAgent, ["examples/images/white.png"])
+        .run()
+    )
+    ```
 
     """
 

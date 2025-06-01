@@ -22,27 +22,40 @@ However, you don't need to have any knowledge of PyGame whatsoever to get starte
 Instead, you only need to familiarise yourself with Violet's `vi.agent` and `vi.simulation` modules.
 You see, all that's needed to create a *video game* is a new instance of the `vi.simulation.Simulation` class.
 
->>> from vi import Simulation
->>> Simulation()
+```python
+from vi import Config, Simulation
+
+
+Simulation(Config())
+```
 
 Yep, that's all it takes to start your simulation.
 However, it closes right away...
 
 To actually `run` your simulation, you need to add one more thing.
 
->>> Simulation().run()
+```python
+from vi import Config, Simulation
+
+
+Simulation(Config()).run()
+```
 
 There, now you have a nice black window appear in the middle of your screen!
 
 Obviously, creating a black window doesn't really count as having created a simulation just yet.
 So let's add some agents!
 
->>> from vi import Agent, Simulation
->>> (
-...     Simulation()
-...     .batch_spawn_agents(100, Agent, ["examples/images/white.png"])
-...     .run()
-... )
+```python
+from vi import Agent, Config, Simulation
+
+
+(
+    Simulation(Config())
+    .batch_spawn_agents(100, Agent, ["examples/images/white.png"])
+    .run()
+)
+```
 
 We now have 100 agents wiggling around our screen.
 They just don't particularly do anything just yet.
@@ -67,11 +80,13 @@ Here we create a new class called `MyAgent`, which inherits the `Agent` class.
 Now, the three dots simply tells Python that we still have to add things to it.
 But before we do that, we can already start a simulation with our new `MyAgent`.
 
->>> (
-...     Simulation()
-...     .batch_spawn_agents(100, MyAgent, ["examples/images/white.png"])
-...     .run()
-... )
+```python
+(
+    Simulation(Config())
+    .batch_spawn_agents(100, MyAgent, ["examples/images/white.png"])
+    .run()
+)
+```
 
 If you look very closely, you can see that there's absolutely no difference!
 The agent is still aimlessly wandering about.
@@ -100,14 +115,16 @@ To be able to change colours,
 we need to supply two different images to our Agent.
 I'll go with a white and a red circle.
 
->>> (
-...     Simulation()
-...     .batch_spawn_agents(100, MyAgent, [
-...         "examples/images/white.png",
-...         "examples/images/red.png",
-...     ])
-...     .run()
-... )
+```python
+(
+    Simulation(Config())
+    .batch_spawn_agents(100, MyAgent, [
+        "examples/images/white.png",
+        "examples/images/red.png",
+    ])
+    .run()
+)
+```
 
 If we run the simulation again,
 we see that the white image is picked automatically,

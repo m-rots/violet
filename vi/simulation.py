@@ -1,7 +1,9 @@
 """Creating a new `Simulation` is as simple as adding two lines of code to a Python file:
 
->>> from vi import Simulation
->>> Simulation().run()
+```python
+from vi import Config, Simulation
+Simulation(Config()).run()
+```
 
 To add some agents to your simulation, you have two tools available to you:
 1. `HeadlessSimulation.batch_spawn_agents`
@@ -203,11 +205,13 @@ class HeadlessSimulation(Generic[ConfigClass]):
         --------
         Spawn 100 `vi.agent.Agent`'s into the simulation with `examples/images/white.png` as image.
 
-        >>> (
-        ...     Simulation()
-        ...     .batch_spawn_agents(100, Agent, ["examples/images/white.png"])
-        ...     .run()
-        ... )
+        ```python
+        (
+            Simulation(Config())
+            .batch_spawn_agents(100, Agent, ["examples/images/white.png"])
+            .run()
+        )
+        ```
 
         """
         # Load images once so the files don't have to be read multiple times.
@@ -233,11 +237,13 @@ class HeadlessSimulation(Generic[ConfigClass]):
         --------
         Spawn a single `vi.agent.Agent` into the simulation with `examples/images/white.png` as image:
 
-        >>> (
-        ...     Simulation()
-        ...     .spawn_agent(Agent, ["examples/images/white.png"])
-        ...     .run()
-        ... )
+        ```python
+        (
+            Simulation(Config())
+            .spawn_agent(Agent, ["examples/images/white.png"])
+            .run()
+        )
+        ```
 
         """
         agent_class(images=self._load_images(images), simulation=self)
@@ -280,11 +286,13 @@ class HeadlessSimulation(Generic[ConfigClass]):
         Spawn a single site into the simulation with `examples/images/site.png` as image.
         In addition, we give specific coordinates where the site should be placed.
 
-        >>> (
-        ...     Simulation(config)
-        ...     .spawn_site("examples/images/site.png", x=375, y=375)
-        ...     .run()
-        ... )
+        ```python
+        (
+            Simulation(Config())
+            .spawn_site("examples/images/site.png", x=375, y=375)
+            .run()
+        )
+        ```
 
         """
         _StaticSprite(
