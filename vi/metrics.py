@@ -6,7 +6,7 @@
 - The agent's current `image_index`
 - The agent's current `angle` if `image_rotation` is enabled
 
-All this data is automatically saved into a [Polar's DataFrame](https://pola-rs.github.io/polars-book/user-guide/)
+All this data is automatically saved into a [Polars](https://docs.pola.rs) DataFrame
 and is provided by the Simulation's `run` method.
 To print a preview of the DataFrame, simply access the `snapshots` property.
 
@@ -83,8 +83,8 @@ shape: (5, 3)
 │ median   ┆ 389.0      ┆ 361.0      │
 └──────────┴────────────┴────────────┘
 
-A construct that you'll likely use a lot is [GroupBy](https://pola-rs.github.io/polars-book/user-guide/dsl/groupby.html).
-Combined with the `agg` method, we can use `groupby` to group our rows by `frame`,
+A construct that you'll likely use a lot is [aggregation](https://docs.pola.rs/user-guide/expressions/aggregation/).
+Combined with the `agg` method, we can use `group_by` to group our rows by `frame`,
 so we can calculate the sum/mean/min/max/... of any expression.
 
 By grouping our DataFrame by the `frame` column,
@@ -96,7 +96,7 @@ we simply add two expressions to our aggregation.
 >>>
 >>>
 >>> print(
-...     df.groupby("frame", maintain_order=True)
+...     df.group_by("frame", maintain_order=True)
 ...     .agg([
 ...         pl.col("x").mean().alias("x_mean"),
 ...         pl.col("y").mean().alias("y_mean"),
@@ -123,7 +123,7 @@ shape: (5, 3)
 Notice that columns that do not appear in our list of aggregations also do not appear in our new DataFrame.
 In the example above, the `id` and `image_index` columns were dropped.
 
-Need some more inspiration? Check out [Polar's Cookbook](https://pola-rs.github.io/polars-book/user-guide/dsl/expressions.html)!
+Need some more inspiration? Check out [Polars' documentation](https://docs.pola.rs/user-guide/expressions/)!
 
 Adding your own data
 --------------------
@@ -221,7 +221,7 @@ class Metrics:
     _temporary_snapshots: defaultdict[str, list[Any]]
 
     snapshots: pl.DataFrame
-    """The [Polars DataFrame](https://pola-rs.github.io/polars-book/user-guide/quickstart/intro.html) containing the snapshot data of all agents over time."""
+    """The [Polars DataFrame](https://docs.pola.rs/api/python/stable/reference/dataframe/index.html) containing the snapshot data of all agents over time."""
 
     def __init__(self) -> None:
         self.fps = Fps()
