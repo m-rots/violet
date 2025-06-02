@@ -6,9 +6,9 @@ A smol simulator framework built on top of [PyGame](https://www.pygame.org/docs/
 - Fully deterministic simulations with PRNG seeds
 - Install Violet with a simple `pip install` 😎
 - Matrix-powered multi-threaded configuration testing
-- [Polars](https://github.com/pola-rs/polars/)-powered simulation analytics
+- [Polars](https://docs.pola.rs)-powered simulation analytics
 - Replay-able simulations with a ✨ time machine ✨
-- Type-safe configuration system (with TOML support)
+- Type-safe configuration system
 
 Want to get started right away?
 Check out the [Violet Starter Kit](https://github.com/m-rots/violet-starter-kit)!
@@ -42,4 +42,4 @@ from vi import Agent, Config, Simulation
 )
 ```
 
-For more information you can check the [documentation](https://api.violet.m-rots.com), [examples](https://github.com/m-rots/violet/tree/main/examples) and the [User Guide](https://violet.m-rots.com).
+For more information you can check the [documentation](https://api.violet.m-rots.com) and the [examples](https://github.com/m-rots/violet/tree/main/examples).

@@ -20,5 +20,5 @@ Congratulations, you have just run your first simulation!
 You can run  other examples with: `uv run examples/[example name]`:
 
 - [`minimal.py`](./minimal.py) - Default simulation with 100 randomly wandering agents.
-- [`data-analysis.py`](./data-analysis.py) - A basic proximity simulation with [Polars](https://pola-rs.github.io/polars-book/user-guide/)-powered data analysis.
+- [`data-analysis.py`](./data-analysis.py) - A basic proximity simulation with [Polars](https://docs.pola.rs)-powered data analysis.
 - [`proximity-player.py`](./proximity-player.py) - A player-controllable simulation showcasing lower-level PyGame functions.

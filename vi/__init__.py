@@ -4,7 +4,7 @@
 - Fully deterministic simulations with PRNG seeds
 - Install Violet with a simple `pip install` 😎
 - Matrix-powered multi-threaded configuration testing
-- [Polars](https://github.com/pola-rs/polars/)-powered simulation analytics
+- [Polars](https://docs.pola.rs)-powered simulation analytics
 - Replay-able simulations with a ✨ time machine ✨
 - Type-safe configuration system
 
