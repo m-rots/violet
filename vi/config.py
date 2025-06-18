@@ -98,7 +98,7 @@ type Poly[T] = T | list[T]
 class Schema[Int: Poly[int], Float: Poly[float]]:
     """All values shared between `Config` and `Matrix`.
 
-    NOTE: DOCUMENTATION OF SCHEMA IS INCORRECT AND WILL BE UPDATED IN VERSION 0.3.1.
+    NOTE: DOCUMENTATION OF SCHEMA IS INCORRECT AND WILL BE UPDATED IN VERSION 0.3.2.
     IF YOU ARE SEEING THIS MESSAGE, MAKE SURE TO UPDATE VIOLET.
 
     A sprinkle of ✨ [magical typing](https://mypy.readthedocs.io/en/stable/generics.html) ✨ makes list values in the `Matrix` class possible without any overrides.
