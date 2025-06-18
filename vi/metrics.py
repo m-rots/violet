@@ -231,6 +231,7 @@ class Metrics:
     def _merge(self) -> None:
         snapshots = pl.from_dict(self._temporary_snapshots)
 
-        self.snapshots.vstack(snapshots, in_place=True)
+        if not snapshots.is_empty():
+            self.snapshots.vstack(snapshots, in_place=True)
 
         self._temporary_snapshots = defaultdict(list)
